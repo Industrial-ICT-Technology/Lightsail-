@@ -81,7 +81,7 @@ def labeling_work(request):
                 # 자동 라벨링 - 검색
                 review_first = print_review(start, end, category_product)
                 current_review = review_first[0].review_content
-                compare_data = FirstLabeledData.objects.all()
+                compare_data = FirstLabeledData.objects.filter(category_id__in=category_detail)
                 auto_data_id = []
                 for i in compare_data:
                     if current_review.__contains__(i.first_labeled_target) and current_review.__contains__(
@@ -136,7 +136,7 @@ def labeling_work(request):
                     print(target, emotion, expression)
                     if not FirstLabeledData.objects.filter(first_labeled_emotion=emotion, first_labeled_target=target,
                                                            first_labeled_expression=expression,
-                                                           category_id=category_id):
+                                                           category_id=category_id, review_id=review_id):
                         # First_Labeled_Data모델을 불러와서 first_labeled_data에 저장
                         first_labeled_data = FirstLabeledData()
 
@@ -162,7 +162,7 @@ def labeling_work(request):
                     ######---- 자동 라벨링 ----#####
                     # 자동라벨링 - 검색
                     current_review = review_first[0].review_content
-                    compare_data = FirstLabeledData.objects.all()
+                    compare_data = FirstLabeledData.objects.filter(category_id__in=category_detail)
                     auto_data_id = []
                     for i in compare_data:
                         if current_review.__contains__(i.first_labeled_target) and current_review.__contains__(
