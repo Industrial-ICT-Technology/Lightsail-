@@ -1,0 +1,717 @@
+{% extends 'base.html' %} {% load static %} {% block style %}
+<link
+  rel="stylesheet"
+  href="{% static 'dashboard/css/dashboard.css' %}?after"
+/>
+{% endblock %} {% block content-title %}
+<div class="header-nav-wrap">
+  <h2 class="content-title fs-large fw-title gray-200">Dashboard</h2>
+  {% if user.is_authenticated %}
+  <div class="fw-400 fs-medium">
+    <a href="{% url 'main:logout' %}" class="header-signup">Logout</a>
+  </div>
+  {% else %}
+  <div class="fw-400 fs-medium">
+    <a
+      class="header-login"
+      href="{% url 'main:login' %}?next={{ request.path }}"
+      >로그인</a
+    >
+    <a
+      class="header-signup"
+      href="{% url 'main:signup' %}?next={{ request.path }}"
+      >회원가입</a
+    >
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %} {% block content %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-hierarchy@2.2.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-format@2.2.3"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/6.3.1/d3.min.js"></script>
+<script src="https://unpkg.com/d3-cloud"></script>
+<script
+type="text/javascript"
+src="https://www.gstatic.com/charts/loader.js"
+></script>
+<script type="text/javascript">
+  window.localStorage.clear();
+  var receivedData = {{ product | safe }};
+  var receivedDataKeys = Object.keys(receivedData);
+  localStorage.setItem('receivedData', JSON.stringify(receivedData))
+  localStorage.setItem('receivedDataKeys',JSON.stringify(receivedDataKeys))
+</script>
+
+<div class="first-desc-wrap" style="padding: 0 45px 22px">
+  {% comment %} 제품선택 {% endcomment %}
+  <form id="dashboard_form" method="GET" action="{% url 'dashboard:dashboard' %}" onsubmit="return handleFormSubmit()">
+    <p class="subject fw-400 fs-base">제품 선택</p>
+    <select name="product" id="product_select_status">
+      <option value="None" selected>
+        제품이름을 선택하세요
+      </option>
+    </select>
+    {% comment %} 모델 선택 {% endcomment %}
+    <select name="model_name" id="model_name_select_status">
+      <option value="">
+        모델이름을 선택하세요
+      </option>
+    </select>
+    <div class="dashboard wrap1">
+      <div class="category_apply">
+        <div class="apply_box">
+          <h3 class="apply_text fs-base fw-400">카테고리</h3>
+        </div>
+        {% comment %} 적용하기 버튼 클릭 시 product, model_name, category 보내주기 {% endcomment %}
+        <button id="submit_button" type="submit">적용하기</button>
+    </div>
+  </form>
+  <script>
+    var getProductName = JSON.parse(localStorage.getItem('receivedDataKeys'))
+    var selectElement = document.getElementById('product_select_status');
+    var selectModelElement = document.getElementById('model_name_select_status');
+  
+    for (var i = 0; i < getProductName.length; i++) {
+      var option = document.createElement('option');
+      option.value = getProductName[i];
+      option.textContent = getProductName[i];
+      selectElement.appendChild(option);
+    }
+    selectElement.addEventListener('change', function() {
+      var receivedData = JSON.parse(localStorage.getItem('receivedData'))
+
+      var selectedProductName = this.value;
+
+      localStorage.setItem('selectedProductName', selectedProductName);
+      localStorage.setItem('select_data',JSON.stringify(receivedData[selectedProductName]))
+      var select_data = JSON.parse(localStorage.getItem('select_data'));
+      
+    
+      var getCategory = receivedData[selectedProductName].category;
+      localStorage.setItem('getCategory', JSON.stringify(getCategory));
+    
+      // 모델 옵션 업데이트
+      var getModelName = select_data.model_name;
+      localStorage.setItem('getModelName', JSON.stringify(getModelName));
+      const model_list = JSON.parse(localStorage.getItem('getModelName'));
+      while (selectModelElement.length > 1) {
+        selectModelElement.remove(1)
+      }
+      selectModelElement.addEventListener('change', function() {
+        var selectedModelName = this.value
+        localStorage.setItem('selectedModelName', selectedModelName);
+      })
+    
+      for (var i = 0; i < model_list.length; i++) {
+        var option = document.createElement('option');
+        option.value = model_list[i];
+        option.textContent = model_list[i];
+        selectModelElement.appendChild(option);
+      }
+    
+      // 카테고리 동적 추가
+      const category_list = JSON.parse(localStorage.getItem('getCategory'));
+      const categoryContainer = $('.apply_box');
+      categoryContainer.children(':not(h3)').remove();
+      localStorage.removeItem('checkedCategories');
+
+      category_list.forEach(category => {
+        const categoryItem = $('<div>', { class: 'category_item' });
+    
+        const applyOnDiv = $('<div>', { class: 'apply_on' });
+        const label = $('<label>', { class: 'switch' });
+        const hiddenInput = $('<input>', { type: 'checkbox', value: category, name: 'category_list' });
+        const span = $('<span>', { class: 'slider round' });
+        hiddenInput.prop('checked', true);
+
+        hiddenInput.on('input', function() {
+          // 체크박스의 현재 상태를 가져옵니다.
+          const isChecked = $(this).prop('checked');
+      
+          // localStorage에 저장된 기존 체크박스 상태를 가져옵니다.
+          let checkedCategories = JSON.parse(localStorage.getItem('checkedCategories')) || [];
+      
+          if (isChecked) {
+            // 체크박스가 체크된 상태라면, 이 체크박스의 value를 배열에 추가합니다.
+            checkedCategories.push(category);
+          } else {
+            // 체크박스가 체크 해제된 상태라면, 이 체크박스의 value를 배열에서 제거합니다.
+            checkedCategories = checkedCategories.filter(item => item !== category);
+          }
+      
+          // 변경된 체크박스 상태를 다시 localStorage에 저장합니다.
+          localStorage.setItem('checkedCategories', JSON.stringify(checkedCategories));
+        });
+        
+        label.append(hiddenInput);
+        label.append(span);
+        applyOnDiv.append(label);
+    
+        const applyMainDiv = $('<div>', { class: 'apply_main', text: category });
+    
+        categoryItem.append(applyOnDiv);
+        categoryItem.append(applyMainDiv);
+    
+        categoryContainer.append(categoryItem);
+      });
+      handleFormSubmit();
+    });
+    function handleFormSubmit() {
+      const selectElement = document.getElementById('model_name_select_status');
+      
+      if (selectElement.value === "") {
+        // 첫 번째 옵션이 선택되었다면 해당 select 요소의 name 속성을 임시로 제거합니다.
+        selectElement.removeAttribute('name');
+        
+        // form 제출이 완료된 후 name 속성을 다시 복원합니다.
+        setTimeout(function() {
+          selectElement.setAttribute('name', 'modelName');
+        }, 0);
+      }
+      
+      document.getElementById('dashboard_form').submit();
+    }
+  
+    // 페이지 로드 시 선택된 제품명을 가져와서 적용합니다.
+    window.onload = function() {
+      var selectedProductName = localStorage.getItem('selectedProductName');
+      var selectedModelName = localStorage.getItem('selectedModelName');
+      const model_list = JSON.parse(localStorage.getItem('getModelName'));
+      
+      if (selectedProductName) {
+        selectElement.value = selectedProductName; // selectElement에 저장된 제품명을 선택합니다.
+        // 나머지 코드 실행
+        const categoryContainer = $('.apply_box');
+        categoryContainer.children(':not(h3)').remove();
+
+        const category_list = JSON.parse(localStorage.getItem('getCategory')) || [];
+        let checkedCategories = JSON.parse(localStorage.getItem('checkedCategories')) || [];
+
+        // 'checkedCategories'가 비어있으면 category_list를 전체로 초기화
+        if (checkedCategories.length === 0) {
+          checkedCategories = category_list.slice();
+          localStorage.setItem('checkedCategories', JSON.stringify(checkedCategories));
+        }
+
+        category_list.forEach(category => {
+          const categoryItem = $('<div>', { class: 'category_item' });
+
+          const applyOnDiv = $('<div>', { class: 'apply_on' });
+          const label = $('<label>', { class: 'switch' });
+          const hiddenInput = $('<input>', { type: 'checkbox', value: category, name: 'category_list' });
+          const span = $('<span>', { class: 'slider round' });
+
+          hiddenInput.prop('checked', checkedCategories.includes(category));
+
+          hiddenInput.on('change', function() {
+            // 체크박스의 현재 상태를 가져옵니다.
+            const isChecked = $(this).prop('checked');
+
+            // 변경된 체크박스 상태를 바로 'checkedCategories'에 반영합니다.
+            if (isChecked && !checkedCategories.includes(category)) {
+              checkedCategories.push(category);
+            } else if (!isChecked && checkedCategories.includes(category)) {
+              checkedCategories = checkedCategories.filter(item => item !== category);
+            }
+
+            // 변경된 체크박스 상태를 다시 localStorage에 저장합니다.
+            localStorage.setItem('checkedCategories', JSON.stringify(checkedCategories));
+          });
+
+          label.append(hiddenInput);
+          label.append(span);
+          applyOnDiv.append(label);
+
+          const applyMainDiv = $('<div>', { class: 'apply_main', text: category });
+
+          categoryItem.append(applyOnDiv);
+          categoryItem.append(applyMainDiv);
+
+          categoryContainer.append(categoryItem);
+        });
+      }
+      if (selectedModelName) {
+        for (var i = 0; i < model_list.length; i++) {
+          var option = document.createElement('option');
+          option.value = model_list[i];
+          option.textContent = model_list[i];
+          selectModelElement.appendChild(option);
+        }
+        selectModelElement.value = selectedModelName;
+        selectModelElement.onchange = function() {
+          // 선택된 모델명을 localStorage에 저장합니다.
+          localStorage.setItem('selectedModelName', selectModelElement.value);
+          document.getElementById('dashboard_form').submit(handleFormSubmit());
+        };
+      }
+      else if (!selectedModelName){
+        for (var i = 0; i < model_list.length; i++) {
+          var option = document.createElement('option');
+          option.value = model_list[i];
+          option.textContent = model_list[i];
+          selectModelElement.appendChild(option);
+        }
+        selectModelElement.value = '';
+        selectModelElement.onchange = function() {
+          // 선택된 모델명을 localStorage에 저장합니다.
+          localStorage.setItem('selectedModelName', selectModelElement.value);
+          document.getElementById('dashboard_form').submit(handleFormSubmit());
+        };
+      }
+    };
+  </script>
+
+    <div class="isNagative">
+      <div>
+        {% comment %} 데이터 하나일 때 이렇게 뽑고 많을 때는 join 사용해서 리스트에서 빼서 쓰기  {% endcomment %}
+        <span class="isNagative_title fw-400 fs-base">긍/부정</span>
+        <div class="switch_label">
+          <label for="target_radio">
+            <input
+              type="radio"
+              name="te_radio"
+              id="target_radio"
+              class="element-to-hide"
+            />
+            <span
+              class="target_btn fs-small fw-600"
+              >대상</span
+            >
+          </label>
+          <label for="expression_radio">
+            <input
+              type="radio"
+              name="te_radio"
+              id="expression_radio"
+              class="element-to-hide"
+            />
+            <span
+              class="expression_btn fs-small fw-600"
+              >현상</span
+            >
+          </label>
+        </div>
+        <div id="cloud"></div>
+
+        <div class="select_btn">
+          <span class="select_pos">
+            <input
+              type="checkbox"
+              id="select_pos"
+              name="positive"
+              value="positive"
+            />
+            <label for="select_pos">긍정</label>
+          </span>
+          <span class="select_neg">
+            <input
+              type="checkbox"
+              id="select_neg"
+              name="negative"
+              value="negative"
+            />
+            <label for="select_neg">부정</label>
+          </span>
+          <span class="select_neu">
+            <input
+              type="checkbox"
+              id="select_neu"
+              name="neutral"
+              value="neutral"
+            />
+            <label for="select_neu">중립</label>
+          </span>
+        </div>
+      </div>
+    </div>
+    <script>
+      const target_radio = document.getElementById("target_radio");
+      const expression_radio = document.getElementById("expression_radio");
+      const target_btn = document.querySelector(".target_btn");
+      const expression_btn = document.querySelector(".expression_btn");
+      const positiveRadio = document.getElementById("select_pos");
+      const negativeRadio = document.getElementById("select_neg");
+      const neutralRadio = document.getElementById("select_neu");
+
+      const positiveTargetData = {{emotion_rank_data.positive.target|safe}}
+      const negativeTargetData = {{emotion_rank_data.negative.target|safe}}
+      const neutralTargetData = {{emotion_rank_data.neutral.target|safe}}
+
+      const positivePhenemenonData = {{emotion_rank_data.positive.phenomenon|safe}}
+      const negativePhenemenonData = {{emotion_rank_data.negative.phenomenon|safe}}
+      const neutralPhenemenonData = {{emotion_rank_data.neutral.phenomenon|safe}}
+
+      target_btn.addEventListener("click", function() {
+        clearWordCloud()
+
+        target_radio.checked = true;
+        expression_radio.checked = false;
+        target_btn.classList.add("onf_btn");
+        expression_btn.classList.remove("onf_btn");
+        positiveRadio.checked = false;
+        negativeRadio.checked = false;
+        neutralRadio.checked = false;
+        let data = [];
+        positiveRadio.addEventListener('change', function() {
+          if (positiveRadio.checked) {
+            data = data.concat(positiveTargetData);
+          } else {
+            data = data.filter(item => !positiveTargetData.includes(item));
+          }
+          generateWordCloud(data);
+        });
+        
+        negativeRadio.addEventListener('change', function() {
+          if (negativeRadio.checked) {
+            data = data.concat(negativeTargetData);
+          } else {
+            data = data.filter(item => !negativeTargetData.includes(item));
+          }
+          generateWordCloud(data);
+        });
+        
+        neutralRadio.addEventListener('change', function() {
+          if (neutralRadio.checked) {
+            data = data.concat(neutralTargetData);
+          } else {
+            data = data.filter(item => !neutralTargetData.includes(item));
+          }
+          generateWordCloud(data);
+        });
+      });
+      
+      expression_btn.addEventListener("click", function() {
+        clearWordCloud()
+        
+        target_radio.checked = false
+        expression_radio.checked = true
+        expression_btn.classList.add("onf_btn");
+        target_btn.classList.remove("onf_btn");
+        positiveRadio.checked = false;
+        negativeRadio.checked = false;
+        neutralRadio.checked = false;
+        let data = [];
+        positiveRadio.addEventListener('change', function() {
+          if (positiveRadio.checked) {
+            data = data.concat(positivePhenemenonData);
+          } else {
+            data = data.filter(item => !positivePhenemenonData.includes(item));
+          }
+          generateWordCloud(data);
+        });
+        
+        negativeRadio.addEventListener('change', function() {
+          if (negativeRadio.checked) {
+            data = data.concat(negativePhenemenonData);
+          } else {
+            data = data.filter(item => !negativePhenemenonData.includes(item));
+          }
+          generateWordCloud(data);
+        });
+        
+        neutralRadio.addEventListener('change', function() {
+          if (neutralRadio.checked) {
+            data = data.concat(neutralPhenemenonData);
+          } else {
+            data = data.filter(item => !neutralPhenemenonData.includes(item));
+          }
+          generateWordCloud(data);
+        });
+      });
+      
+
+      {% comment %} 워드클라우드 생성 {% endcomment %}
+      function generateWordCloud(data) {
+        const sort_data = data.reverse()
+        const words = sort_data.map((word, index) => ({ text: word, size: index + 1 }));
+        
+        const width = 388;
+        const height = 142;
+        //워드 클라우드 초기화
+        d3.select("#cloud").select("svg").remove();
+        const svg = d3.select("#cloud")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .append("g")
+          .attr("transform", `translate(${width / 2}, ${height / 2})`);
+        
+        const color = d3.scaleOrdinal(d3.schemeCategory10);
+        
+        const layout = d3.layout.cloud()
+          .size([width, height])
+          .words(words)
+          .padding(5)
+          .rotate(0)
+          .fontSize(d => d.size * 10) // 워드 사이즈 조정
+          .text(d => d.text)
+          .font("Impact")
+          .on("end", draw);
+        
+        layout.start();
+        
+        function draw(words) {
+          svg.selectAll("text")
+            .data(words)
+            .enter().append("text")
+            .style("font-size", d => `${d.size}px`)
+            .style("fill", (_, i) => color(i))
+            .attr("text-anchor", "middle")
+            .attr("transform", d => `translate(${[d.x, d.y]})rotate(${d.rotate})`)
+            .text(d => d.text);
+        }
+      }
+      function clearWordCloud() {
+        const svg = d3.select("#cloud").select("svg");
+        svg.selectAll("*").remove();
+      }
+    </script>
+
+    <div class="rawdata fw-400 fs-base">
+      <h3 class="rawdata_text">Raw Data</h3>
+      <div class="rawdata_container">
+        {% for review in raw_data %}
+        <div class="rawdata_wrap">
+          <div class="rawdata_item fs-tiny fw-400">{{review}}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <script>
+      let select_raw_data = {{select_raw_data | safe}}
+      let raw_data = {{raw_data | safe}}
+    
+      document.addEventListener('DOMContentLoaded', (event) => {
+        var gElements = document.querySelectorAll('g');
+        var lastClickedElement = null;
+    
+        gElements.forEach((gElement) => {
+          gElement.addEventListener('click', function(event) {
+            var clickedId = gElement.getAttribute('id');
+            var isPositive = document.querySelector('#treemapPositive').contains(gElement);
+            var isNegative = document.querySelector('#treemapNegative').contains(gElement);
+            var new_data;
+    
+            var rawdata_container = document.querySelector('.rawdata_container');
+            rawdata_container.innerHTML = '';
+    
+            // 클릭된 요소가 이전에 클릭된 요소와 같다면 원본 데이터 복원
+            if (gElement === lastClickedElement) {
+              gElement.classList.remove('highlight');
+              new_data = raw_data;
+              lastClickedElement = null; // 마지막으로 클릭된 요소 초기화
+            } else {
+              // 클릭된 요소에 따라 new_data 설정
+              if (isPositive) {
+                new_data = select_raw_data[clickedId].positive;
+              } 
+              if (isNegative) {
+                new_data = select_raw_data[clickedId].negative;
+              }
+
+              gElements.forEach((element) => {
+                element.classList.remove('highlight');
+              });
+
+              gElement.classList.add('highlight');
+
+              lastClickedElement = gElement;
+            }
+    
+            new_data.forEach((item, i) => {
+              var rawdata_wrap = document.createElement('div');
+              rawdata_wrap.className = 'rawdata_wrap';
+        
+              var rawdata_item = document.createElement('div');
+              rawdata_item.className = 'rawdata_item fs-tiny fw-400';
+              rawdata_item.textContent = item;
+        
+              rawdata_wrap.appendChild(rawdata_item);
+              rawdata_container.appendChild(rawdata_wrap);
+            });
+          });
+        });
+      });      
+    </script>
+    
+  </div>
+
+  <div class="dashboard wrap2">
+    <div class="frequency">
+      <h3 class="frequency_text fw-400 fs-base">카테고리별 빈도</h3>
+      <div class="frequency_box fs-small fw-400">
+        <p class="fw-400 fs-base">긍정</p>
+        <div id="treemapPositive"></div>
+        <p class="fw-400 fs-base">부정</p>
+        <div id="treemapNegative"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard wrap3">
+    <div class="category_ratio">
+      <h3 class="category_ratio_text fw-400 fs-base">카테고리별 긍정/부정</h3>
+      <div class="category_ratio_box fs-small fw-400">
+        <canvas id="ratio_category" width="500px" height="230px"></canvas>
+      </div>
+    </div>
+    <div class="ratio1">
+      <h3 class="ratio1_text fw-400 fs-base">긍/부정 비율</h3>
+      <div class="ratio1_box">
+        <div class="canvas-container fs-small fw-400">
+          <canvas id="ratio" height="230px"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const count_by_category = {{count_by_category|safe}};
+    const total_count = {{total_by_review|safe}};
+    const positiveValues = {};
+    const negativeValues = {};
+    const neutralValues = {};
+    // count_by_category 객체를 순회하면서 positive 값을 새로운 객체에 추가
+    for (const key in count_by_category) {
+        if (count_by_category.hasOwnProperty(key)) {
+            positiveValues[key] = count_by_category[key].positive;
+            negativeValues[key] = count_by_category[key].negative;
+            neutralValues[key] = count_by_category[key].neutral;
+        }
+    }
+    // 트리맵 생성
+    function prepareData(values) {
+      return {
+        children: Object.entries(values).map(([key, value]) => ({ name: key, value }))
+      };
+    }
+    
+    
+    const dataPos = prepareData(positiveValues);
+    const dataNeg = prepareData(negativeValues);
+    const dataNeu = prepareData(neutralValues);
+
+    const width = 300;
+    const height = 210;
+    
+    const createTreemap = (svg, data, color) => {
+      if (data.children.some(child => child.value !== 0)) {
+        const treemap = d3.treemap()
+          .size([width, height])
+          .padding(10);
+    
+        const root = d3.hierarchy(data)
+          .sum(d => d.value || 0)
+          .each(d => { d.key = d.data.name; });
+    
+        treemap(root);
+    
+        const cell = svg.selectAll("g")
+          .data(root.leaves())
+          .enter().append("g")
+          .attr("transform", d => `translate(${d.x0},${d.y0})`)
+          .attr("id", d => `${(d.key)}`);
+
+    
+        cell.append("rect")
+          .attr("width", d => d.x1 - d.x0)
+          .attr("height", d => d.y1 - d.y0)
+          .attr("fill", color);
+    
+        cell.append("text")
+          .attr("x", 5)
+          .attr("y", 15)
+          .text(d => d.data.value !== 0 ? d.key : "");
+      }
+    };
+    
+    const svgPositive = d3.select("#treemapPositive")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    const svgNegative = d3.select("#treemapNegative")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    createTreemap(svgPositive, dataPos, '#1f77b4');
+    createTreemap(svgNegative, dataNeg, '#d62728');
+        
+    //  누적막대그래프
+    let stackedDataset = [
+      {
+        label: 'Positive',
+        data: Object.values(positiveValues),
+        backgroundColor: '#1f77b4'
+      },
+      {
+        label: 'Negative',
+        data: Object.values(negativeValues),
+        backgroundColor: '#d62728'
+      },
+      {
+        label: 'Neutral',
+        data: Object.values(neutralValues),
+        backgroundColor: '#7f7f7f'
+      }
+    ];
+
+    let category_detail_list = Object.keys(count_by_category); // 카테고리 리스트
+
+    let numData = category_detail_list.length; // 데이터 개수
+    const barThickness = numData <= 3 ? 100 : 'flex';
+
+    new Chart(document.getElementById("ratio_category"), {
+      type: 'bar',
+      data: {
+        labels: category_detail_list,
+        datasets: stackedDataset.map(dataset => ({
+          ...dataset,
+          barThickness
+        }))
+      },
+      options: {
+        scales: {
+          x: {
+            stacked: true
+          },
+          y: {
+            stacked: true
+          }
+        }
+      }
+    });
+
+    //도넛형 그래프
+    let ctx = document.getElementById("ratio").getContext("2d");
+    let pieChart = new Chart(ctx, {
+      type: "doughnut",
+
+      data: {
+        labels: ["Positive", "Negative", "Neutral"],
+        datasets: [
+          {
+            data: [total_count.positive, total_count.negative, total_count.neutral],
+            backgroundColor: ["#1f77b4", "#d62728", "#7f7f7f"],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { display: false },
+          y: { display: false }
+        },
+        plugins: {
+          legend: false
+        }
+      }
+    });
+  </script>
+</div>
+{% endblock %}

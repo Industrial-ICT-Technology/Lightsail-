@@ -1,0 +1,290 @@
+content-title {
+  width: 135px;
+  height: 24px;
+  font-style: normal;
+}
+
+.subject {
+  display: inline-block;
+  margin-right: 10px
+  
+}
+
+select {
+  display: inline-block;
+  height: 34px;
+  border-radius: 5px;
+  border: 0.5px solid #D5D5D5;
+}
+
+
+
+
+.test{
+  display: flex;
+  margin-top: 31px;
+}
+.totalBar {
+  white-space: nowrap;
+  
+}
+.right_top {
+  display: inline-block;
+  width: 108px;
+  height: 24px;
+  text-align: center;
+  border-radius: 12px;
+  
+  
+}
+.right_top.top1 {
+  background: #e6e6e6;
+  color: #464646;
+
+  
+}
+.right_top.top2 {
+  background: #ebf6ff;
+  color: #15476d;
+  
+}
+
+.right_top.top3 {
+  background: #f6fff6;
+  color: #158212;
+  
+}
+.right_top.top4 {
+  background: #ffeef0;
+  color: #6e1b20;
+  
+  
+}
+.submenubar{
+  display: flex;
+  justify-content: space-between;
+  margin-top: 31px;
+  margin-bottom: 27px;
+  margin-right: 30px;
+}
+
+.date_space_cut p:hover {
+  cursor: pointer;
+}
+svg{
+  margin-right: 7.67px;
+  
+}
+.category_wrap {
+  display: flex;
+}
+.category_1 {
+  width: 100%;
+  margin-right: 18px;
+}
+.category_column {
+  color: #1a1a1a;
+  letter-spacing: 0em;
+  border: 1px solid #e4e4ef;
+  border-radius: 6px;
+  max-height: 646px;
+  overflow-y: auto;
+}
+
+.sort:hover {
+  cursor: pointer;
+}
+
+.data_label {
+  background-color: #f2f2f2;
+  text-align: center;
+  padding: 10px;
+  gap: 8px;
+}
+
+.data_label > a {
+  color: #1a1a1a;
+}
+
+#targetPhenomenonTable tbody td {
+  font-size: 12px;
+  line-height: 24px;
+  font-family: lg_smartregular;
+  font-weight: 400;
+}
+
+#reviewTable tbody td{
+  font-size: 12px;
+  line-height: 24px;
+  font-family: lg_smartregular;
+  font-weight: 400;
+}
+
+#reviewTable tbody td:nth-child(2) {
+  text-align: left;
+}
+
+.num {
+  width: 20%;
+}
+
+.data {
+  width: 80%;
+}
+.data_space_cut{
+  padding: auto;
+}
+.date_space_cut > p > a{
+  color: #1A1A1A;
+  font-style: normal;
+  
+  
+}
+.cut1{
+  font-style: normal;
+  
+  
+}
+
+.category_2 {
+  width: 196px; 
+  margin-right: 18px;
+  
+}
+.category_target{
+  color: #1a1a1a; 
+  letter-spacing: 0em;
+  border: 1px solid #e4e4ef;
+  border-radius: 6px;
+  overflow-x: hidden;
+  max-height: 646px;
+  overflow-y: auto;
+ 
+}
+
+.cut2{
+  
+  width: 99px;
+}
+.category_3{
+  width: 100%;
+  margin-right: 27px;
+  max-height: 646px;
+  overflow-y: auto ;
+  
+}
+.category_review{
+  color: #1a1a1a;
+  letter-spacing: 0em;
+  border: 1px solid #e4e4ef;
+  border-radius: 6px;
+  
+  
+  
+}
+table {
+  text-align: center;
+  width: 100%;
+  border-collapse: collapse;
+  
+}
+tr {
+  border: 1px solid #E8E8E8;
+  padding: 5px 16px;
+
+}
+
+
+
+::-webkit-scrollbar {
+  width: 2px;
+}
+
+/* 스크롤바의 배경색을 지정 */
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+/* 스크롤바 위쪽의 화살표를 지정 */
+::-webkit-scrollbar-button:start:decrement,
+::-webkit-scrollbar-button:end:increment {
+  height: 0;
+}
+
+/* 스크롤바 색상을 지정 */
+::-webkit-scrollbar-thumb {
+  background-color:  #888888;
+  border-radius: 5px;
+}
+
+/* 스크롤바 위쪽의 공간을 지정 */
+::-webkit-scrollbar-track-piece {
+  margin-top: 5px;
+}
+
+.workerBtn {
+  width: 146px;
+  height: 34px;
+  border-radius: 5px;
+  background-color: #F2F2F2;
+}
+
+.workerBtn img {
+  vertical-align: middle;
+  padding-right: 5px;
+}
+
+
+.modal {
+  display: none; 
+  position: fixed; 
+  z-index: 1; 
+  padding-top: 100px; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgb(0,0,0); 
+  background-color: rgba(0,0,0,0.4); 
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 598px;
+  height: 529px; 
+}
+
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal_form{
+  margin-top: 10px;
+  margin-left: 20px;
+  margin-bottom: 29px;
+}
+
+.pop_top .count_table {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.modalTd {
+  height: 35px;
+  text-align: center;
+  vertical-align: middle;
+}

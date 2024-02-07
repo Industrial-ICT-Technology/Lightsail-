@@ -1,0 +1,628 @@
+{% extends 'base.html' %} {% load static %} 
+{% block style %}
+<link rel="stylesheet" href="{% static 'main/css/work_status.css' %}?after" />
+{% endblock %} 
+{% block content-title %}
+<div class="header-nav-wrap">
+    <h2 class="content-title fs-large fw-title gray-200">
+        Work Status
+    </h2>
+    {% if user.is_authenticated %}
+    <div class="fw-400 fs-medium">
+        <a href="{% url 'main:logout' %}" class="header-signup">Logout</a>
+    </div>
+    {% else %}    
+    <div class="fw-400 fs-medium">
+        <a
+            class="header-login"
+          href="{% url 'main:login' %}?next={{ request.path }}"
+          >로그인</a
+        >
+        <a
+            class="header-signup"
+          href="{% url 'main:signup' %}?next={{ request.path }}"
+          >회원가입</a
+        >
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+{% block content %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+{{ product|json_script:"productData" }}
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!localStorage.getItem('productDataInitialized')) {
+      let productData = JSON.parse(document.getElementById('productData').textContent);
+      localStorage.setItem('productData', JSON.stringify(productData));
+      localStorage.setItem('productDataInitialized', 'true');
+    }
+
+    let storedProductData = localStorage.getItem('productData');
+    if (!storedProductData || storedProductData === "") {
+      localStorage.setItem('productData', JSON.stringify(productData));
+    }
+  });
+</script>
+
+
+
+<div class="first-desc primary-bg gray-100">
+  <div class="first-desc-wrap">
+    <form style="display: inline-block" action="{% url 'main:workstatus_review' %}" method="get" name="category_product">
+      {% csrf_token %}
+      <p class="subject fw-400 fs-base">제품 선택</p>
+      <select name="product" id="product_select_status">
+        {% if selected %}
+          <option value="{{ selected }}" selected>{{ selected }}</option>
+        {% else %}
+          <option value="--제품을 선택하세요--" selected>제품이름을 선택하세요</option>
+        {% endif %}
+      </select>
+    </form>
+
+    <form style="display: inline-block" action="{% url 'main:workstatus_review' %}" method="get" name="category_model_name">
+      {% csrf_token %}
+      <select name="model_name" id="model_name_select_status">
+        {% if selected_name %}
+          <option value="{{ selected_name }}" selected>{{ selected_name }}</option>
+        {% else %}
+          <option value="--모델명을 선택하세요--" selected>모델이름을 선택하세요</option>
+        {% endif %}
+      </select>
+    </form>
+
+    <form style="display: inline-block" action="{% url 'main:workstatus_review' %}" method="get" name="category_model_code">
+      {% csrf_token %}
+      <select name="model_code" id="model_code_select_status">
+        {% if selected_code %}
+          <option value="{{ selected_code }}" selected>{{ selected_code }}</option>
+        {% else %}
+          <option value="--모델 코드를 선택하세요--" selected>모델 코드를 선택하세요</option>
+        {% endif %}
+      </select>
+    </form>
+
+    <!-- JavaScript 코드 -->
+    <script>
+      window.addEventListener('load', function() {
+        var selectElement = document.getElementById('product_select_status');
+        var modelSelectElement = document.getElementById('model_name_select_status');
+        var modelCodeSelectElement = document.getElementById('model_code_select_status');
+      
+        loadDataToSelect(selectElement, 'product');
+      
+        selectElement.addEventListener("change", function(event) {
+          event.preventDefault(); 
+          localStorage.setItem("product_select_status", this.value);
+          localStorage.removeItem('model_name_select_status');
+          localStorage.removeItem('model_code_select_status');
+          localStorage.removeItem('categoryOrder');
+          updateModelSelect(this.value);
+          document.forms['category_product'].submit();  // 'product' 선택 시 submit
+        });
+      
+        modelSelectElement.addEventListener("change", function(event) {
+          event.preventDefault();
+          localStorage.setItem("model_name_select_status", this.value);
+        
+          var productInput = document.createElement('input');
+          productInput.type = 'hidden';
+          productInput.name = 'product';
+          productInput.value = selectElement.value;
+          updateModelCodeSelect(selectElement.value, this.value);
+          localStorage.removeItem('model_code_select_status');
+
+          // localStorage.removeItem('categoryOrder'); 모델 네임 form 선택 시 정렬 상태 초기화
+          
+          document.forms['category_model_name'].appendChild(productInput);
+          document.forms['category_model_name'].submit();  
+        });
+
+        modelCodeSelectElement.addEventListener("change", function(event) {
+          event.preventDefault();
+          localStorage.setItem("model_code_select_status", this.value);
+        
+          var productInput = document.createElement('input');
+          productInput.type = 'hidden';
+          productInput.name = 'product';
+          productInput.value = selectElement.value;
+          
+          var modelNameInput = document.createElement('input');
+          modelNameInput.type = 'hidden';
+          modelNameInput.name = 'model_name';
+          modelNameInput.value = modelSelectElement.value;
+        
+          var modelCodeInput = document.createElement('input');
+          modelCodeInput.type = 'hidden';
+          modelCodeInput.name = 'model_code';
+          modelCodeInput.value = this.value;
+
+          // localStorage.removeItem('categoryOrder'); 모델 코드 form 선택 시 정렬 상태 초기화
+        
+          document.forms['category_model_code'].appendChild(productInput);
+          document.forms['category_model_code'].appendChild(modelNameInput);
+          document.forms['category_model_code'].appendChild(modelCodeInput);
+          document.forms['category_model_code'].submit();  
+        });
+      
+        var savedProduct = localStorage.getItem('product_select_status');
+        if (savedProduct) {
+          selectElement.value = savedProduct;
+          updateModelSelect(savedProduct);
+        }
+
+        var savedModelName = localStorage.getItem('model_name_select_status');
+        if (savedModelName) {
+          modelSelectElement.value = savedModelName;
+          updateModelCodeSelect(savedProduct, savedModelName)
+        }
+
+        var savedModelCode = localStorage.getItem('model_code_select_status');
+        if (savedModelCode) {
+          modelCodeSelectElement.value = savedModelCode;
+        }
+      });
+      
+      function loadDataToSelect(selectElement) {
+        var savedProductData = JSON.parse(localStorage.getItem('productData'));
+      
+        for (var key in savedProductData) {
+          if (savedProductData.hasOwnProperty(key)) {
+            var option = document.createElement('option');
+            option.value = key;
+            option.textContent = key;
+            selectElement.appendChild(option);
+          }
+        }
+      }
+      
+      function updateModelSelect(product) {
+        var modelSelectElement = document.getElementById('model_name_select_status');
+      
+        var savedProductData = JSON.parse(localStorage.getItem('productData'));
+        var selectedProductModels = savedProductData[product]["model_name"];
+        for (var key in selectedProductModels) {
+          if (selectedProductModels.hasOwnProperty(key)) {
+            var option = document.createElement('option');
+            option.value = key;
+            option.textContent = key;
+            modelSelectElement.appendChild(option);
+          }
+        }
+      }
+
+      function updateModelCodeSelect(product, modelName) {
+        var modelCodeSelectElement = document.getElementById('model_code_select_status');
+    
+        var savedProductData = JSON.parse(localStorage.getItem('productData'));
+        var modelData = savedProductData[product]["model_name"][modelName];
+        var modelCodes = modelData["model_code"];
+        
+        for (var i = 0; i < modelCodes.length; i++) {
+          var option = document.createElement('option');
+          option.value = modelCodes[i];
+          option.textContent = modelCodes[i];
+          modelCodeSelectElement.appendChild(option);
+        }
+      }
+      </script>
+      
+      
+    
+  <div class = "submenubar">
+    <div class="totalBar fw-400 fs-small">
+      <div class="right_top top1">총 개수 {{ total_count }}</div>
+      <div class="right_top top2">작업완료 {{ complete_count }}</div>
+      <div class="right_top top3">남은개수 {{ remain_count }}</div>
+      <div class="right_top top4">삭제 {{ deleted_count }}</div>
+    </div>
+
+    <div class="fw-600 fs-small">       
+      <button class="workerBtn"id="openModal"><img src="{% static 'images/worker.svg' %}" alt="Worker" />작업자별 진행 현황</button>
+    
+      <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <div class="modal_containor">
+            <div class="pop_top">
+              <form class='modal_form'id="myForm" style="display: inline-block" action="{% url 'main:workstatus_worker' %}" method="get">
+                {% csrf_token %}
+                <div class="subject first fw-400">제품 선택</div>
+                <select class="select" name="product" id="select_product">
+                    <option value="--제품을 선택하세요--" selected>제품명을 선택하세요</option>
+                </select>
+              </form>
+              <script>
+                  $(document).ready(function() {
+                      var selectElement = document.getElementById('select_product');
+              
+                      loadDataToSelect(selectElement, 'product');
+              
+                      $('#myForm').on('submit', function(event) {
+                          event.preventDefault();  // Prevent form from being submitted normally
+              
+                          $.ajax({
+                            url: '{% url 'main:workstatus_worker' %}',  // 'workstatus_worker' 뷰의 URL
+                            type: 'GET',
+                            data: {
+                              product: localStorage.getItem("select_product")  // 선택한 제품을 'product'라는 이름으로 전송
+                            },
+                            success: function(response){
+                              var userCountList = response.user_count_list;  // 응답에서 'user_count_list' 추출
+                      
+                              // 테이블의 tbody를 선택
+                              var tbody = $('.tbody');
+                      
+                              // 기존의 tbody 내용을 비움
+                              tbody.empty();
+                      
+                              // userCountList에 있는 각 항목을 tbody에 추가
+                              userCountList.forEach(function(item){
+                                for (var name in item) {
+                                    var count = item[name];
+                    
+                                    // 새로운 행을 생성
+                                    var row = $('<tr></tr>');
+                    
+                                    // 이름과 개수를 행에 추가
+                                    row.append('<td class="modalTd" style="width:250px">' + name + '</td>');
+                                    row.append('<td class="modalTd" style="width:190px">' + count + '</td>');
+                    
+                                    // 행을 tbody에 추가
+                                    tbody.append(row);
+                                }
+                                console.log(response)
+                              });
+                            },
+                            error: function(error){
+                              console.log(error);
+                            }
+                          });
+                      });
+              
+                      selectElement.addEventListener("change", function(event) {
+                          event.preventDefault(); 
+                          localStorage.setItem("select_product", this.value);
+                          updateModelSelect(this.value);
+                          $('#myForm').submit();  // 'product' 선택 시 submit
+                      });
+                  });
+              </script>            
+              <div class="count_table">
+                <table>
+                  <thead class='thead fw-600 fs-small'>
+                    <tr style="background:#f2f2f2">
+                      <th class="data_label"style="width:250px">ID</th>
+                      <th class="data_label"style="width:190px">개수</th>
+                    </tr>
+                  </thead>
+                  <tbody class='tbody fw-400 fs-small'>
+                  <tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+        var modal = document.getElementById("myModal");
+        var btn = document.getElementById("openModal");
+        var span = document.getElementsByClassName("close")[0];
+      
+        btn.onclick = function() {
+          var workStatus = localStorage.getItem("product_select_status2");
+          localStorage.setItem("product_select_status2", "--제품을 선택하세요--");
+          modal.style.display = "block";
+        }
+      
+        span.onclick = function() {
+          modal.style.display = "none";
+        }
+      
+        window.onclick = function(event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        }
+      </script>      
+    </div>
+  </div>
+    
+    <div class="category_wrap">
+      <div class="category category_1">
+        <div class="category_column  fw-600 fs-small">
+          <table id='myTable'>
+            <thead>
+              <tr>
+                <th> <div class="data_label label1">카테고리</div></th>
+                <th class="sortable"><div class="data_label sort">
+                  긍정
+                </div></th>
+                <th class="sortable"><div class="data_label sort">
+                  부정
+                </div></th>
+                <th class="sortable"><div class="data_label sort">
+                  중립
+                </div></th>
+                <th class="sortable"><div class="data_label sort">
+                  총개수
+                </div></th>
+              </tr>
+            </thead>
+            <script>
+              $(document).ready(function() {
+                if (!localStorage.getItem('categoryOrderInitialized')) {
+                  localStorage.removeItem('categoryOrder');
+                  localStorage.setItem('categoryOrderInitialized', 'true');
+                }
+          
+                saveCategoryOrder();
+          
+                $('th.sortable').click(function() {
+                  var table = $(this).parents('table').eq(0);
+                  var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+                  this.asc = !this.asc;
+                  if (!this.asc) {
+                    rows = rows.reverse();
+                  }
+                  for (var i = 0; i < rows.length; i++) {
+                    table.append(rows[i]);
+                  }
+          
+                  saveCategoryOrder();
+                });
+          
+                function comparer(index) {
+                  return function(a, b) {
+                    var valA = getCellValue(a, index),
+                      valB = getCellValue(b, index);
+                    return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.toString().localeCompare(valB);
+                  };
+                }
+          
+                function getCellValue(row, index) {
+                  return $(row).children('td').eq(index).text();
+                }
+          
+                function saveCategoryOrder() {
+                  var table = $('table');
+                  var categoryOrder = [];
+          
+                  // 테이블의 각 행을 순회하며 카테고리 이름을 저장
+                  table.find('tr:gt(0)').each(function() {
+                    var categoryName = $(this).children('td:first-child').find('p').text().trim();
+                    
+                    if (categoryName !== "") {
+                      categoryOrder.push(categoryName);
+                    }
+                  });
+          
+                  localStorage.setItem('categoryOrder', JSON.stringify(categoryOrder));
+                }
+              });
+            </script>
+            
+            <form id="myForm2" method="GET" action="{% url 'main:workstatus_review' %}">
+                <input type="hidden" id="category" name="category">
+                <input type="hidden" id="emotion" name="emotion">
+                <input type="hidden" id="showing_index" name="showing_index">
+                <input type="hidden" id="product" name="product">
+                <input type="hidden" id="model_name" name="model_name">
+                <input type="hidden" id="model_code" name="model_code">
+            </form>
+            <tbody>
+              {% for category__name, count in category_emotion_dict.items %}
+                <tr>
+                  <td>
+                    <div class="date_space_cut cut1 fw-600 fs-small">
+                      <p>{{ category__name }}</p>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="date_space_cut fw-400 fs-tiny">
+                      <p onclick="onClick('{{ category__name }}', 'positive', 
+                          {% if selected_code %}
+                              {{ count.positive_count }}
+                          {% elif selected_name %}
+                              {{ count.positive_count }}
+                          {% else %}
+                              {{ count.positive_count }}
+                          {% endif %}
+                      )">
+                          {% if selected_code %}
+                              {{ count.positive_count }}
+                          {% elif selected_name %}
+                              {{ count.positive_count }}
+                          {% else %}
+                              {{ count.positive_count }}
+                          {% endif %}
+                      </p>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="date_space_cut fw-400 fs-tiny">
+                      <p onclick="onClick('{{ category__name }}', 'negative', 
+                        {% if selected_code %}
+                            {{ count.negative_count }}
+                        {% elif selected_name %}
+                            {{ count.negative_count }}
+                        {% else %}
+                            {{ count.negative_count }}
+                        {% endif %}
+                      )">
+                        {% if selected_code %}
+                            {{ count.negative_count }}
+                        {% elif selected_name %}
+                            {{ count.negative_count }}
+                        {% else %}
+                            {{ count.negative_count }}
+                        {% endif %}
+                      </p>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="date_space_cut fw-400 fs-tiny">
+                      <p onclick="onClick('{{ category__name }}', 'neutral', 
+                        {% if selected_code %}
+                            {{ count.neutral_count }}
+                        {% elif selected_name %}
+                            {{ count.neutral_count }}
+                        {% else %}
+                            {{ count.neutral_count }}
+                        {% endif %}
+                      )">
+                        {% if selected_code %}
+                            {{ count.neutral_count }}
+                        {% elif selected_name %}
+                            {{ count.neutral_count }}
+                        {% else %}
+                            {{ count.neutral_count }}
+                        {% endif %}
+                      </p>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="date_space_cut fw-400 fs-tiny">
+                      <p onclick="onClick('{{ category__name }}', 'total', 
+                        {% if selected_code %}
+                            {{ count.emotion_total_count }}
+                        {% elif selected_name %}
+                            {{ count.emotion_total_count }}
+                        {% else %}
+                            {{ count.emotion_total_count }}
+                        {% endif %}
+                      )">
+                        {% if selected_code %}
+                            {{ count.emotion_total_count }}
+                        {% elif selected_name %}
+                            {{ count.emotion_total_count }}
+                        {% else %}
+                            {{ count.emotion_total_count }}
+                        {% endif %}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table> 
+          <script>
+            function onClick(category, emotion, count, targetPhenomenonListString) {
+              document.getElementById('category').value = category;
+              document.getElementById('emotion').value = emotion;
+              document.getElementById('showing_index').value = count;
+              document.getElementById('product').value = document.getElementById('product_select_status').value;
+          
+              var modelNameElement = document.getElementById('model_name_select_status'); 
+              if (modelNameElement && modelNameElement.value && modelNameElement.value !== '--모델명을 선택하세요--') { 
+                document.getElementById('model_name').value = modelNameElement.value;
+              }
+              
+              var modelCodeElement = document.getElementById('model_code_select_status');
+              if (modelCodeElement && modelCodeElement.value && modelCodeElement.value !== '--모델 코드를 선택하세요--') { 
+                document.getElementById('model_code').value = modelCodeElement.value;
+              }
+          
+              document.getElementById('myForm2').submit();
+            }
+            window.onload = function() {
+              var categoryOrder = localStorage.getItem('categoryOrder');
+              if (categoryOrder) {
+                // 로컬 스토리지에서 가져온 정렬 상태를 적용하는 코드를 작성하세요.
+                // 예를 들어, categoryOrder 값을 기준으로 테이블의 행을 정렬하는 등의 작업을 수행할 수 있습니다.
+                var tableBody = document.querySelector('tbody');
+                var rows = Array.from(tableBody.rows);
+          
+                // categoryOrder를 기반으로 rows 정렬
+                rows.sort(function(a, b) {
+                  var aCategory = a.querySelector('.date_space_cut p').textContent;
+                  var bCategory = b.querySelector('.date_space_cut p').textContent;
+                  var aIndex = categoryOrder.indexOf(aCategory);
+                  var bIndex = categoryOrder.indexOf(bCategory);
+                  return aIndex - bIndex;
+                });
+          
+                // 정렬된 rows를 다시 tbody에 추가
+                rows.forEach(function(row) {
+                  tableBody.appendChild(row);
+                });
+              }
+            };
+          </script>
+        </div>
+      </div>
+      
+      <div class="category category_2">
+        <div class="category_target">
+          <table id="targetPhenomenonTable"> <!-- 여기에 아이디를 추가했습니다 -->
+              <thead class="thead fw-600 fs-small">
+                  <tr>
+                      <th><div class="data_label" style="width: 99px;">대상</div></th>
+                      <th><div class="data_label" style="width: 99px;">현상</div></th>
+                  </tr>
+              </thead>
+              <tbody>
+              </tbody>
+          </table>
+          <script>
+              var targetPhenomenonList = {{ target_phenomenon_list | safe }};
+              var tableBody = document.querySelector("#targetPhenomenonTable tbody");
+      
+              targetPhenomenonList.forEach(function(item) {
+                  var parts = item.split('-');
+                  var row = document.createElement('tr');
+      
+                  var td1 = document.createElement('td');
+                  td1.textContent = parts[0];
+                  row.appendChild(td1);
+      
+                  var td2 = document.createElement('td');
+                  td2.textContent = parts[1];
+                  row.appendChild(td2);
+      
+                  tableBody.appendChild(row);
+              });
+          </script>
+        </div>      
+      </div>
+      <div class="category category_3">
+        <div class="category_review">
+          <table id="reviewTable">
+              <thead class="thead fw-600 fs-small">
+                  <tr>
+                      <th class="num"><div class="data_label">번호</div></th>
+                      <th class="data"><div class="data_label">데이터</div></th>
+                  </tr>
+              </thead>
+              <tbody>
+              </tbody>
+          </table>
+          <script>
+              var reviewList = {{ review_list | safe }};
+              var tableBody = document.querySelector("#reviewTable tbody");
+      
+              reviewList.forEach(function(item) {
+                  var parts = item.split('-');  // '-'를 기준으로 문자열을 분리합니다
+                  var row = document.createElement('tr');
+      
+                  var td1 = document.createElement('td');
+                  td1.textContent = parts[0];  // '-' 앞의 문자열을 번호로 사용합니다
+                  row.appendChild(td1);
+      
+                  var td2 = document.createElement('td');
+                  td2.textContent = parts[1];  // '-' 뒤의 문자열을 데이터로 사용합니다
+                  row.appendChild(td2);
+      
+                  tableBody.appendChild(row);
+              });
+          </script>
+        </div>      
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

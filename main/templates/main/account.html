@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %} 
+{% block style %}
+    <link rel="stylesheet" href="{% static 'main/css/account.css' %}" />
+{% endblock %}  
+    <div>
+        <div class="account_containor">
+            {% if target_user.profile %}
+                <div class="account_myprofile">
+                    <img class="profile_img"src="{{ target_user.profile.image.url }}" alt="profile"/>
+                    <div>
+                        <p class="fs-base fw-medium">{{ target_user.profile.name }}</p>
+                    </div>
+                </div>
+                {% if target_user == user %}
+                    <div class="account_content fs-base fw-400">
+                        <a href="{% url 'main:update_profile' pk=target_user.profile.pk %}">
+                            프로필 편집
+                        </a>
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if target_user == user %}
+                    <div class="account_content fs-base fw-400">
+                        <a href="{% url 'main:account_profile' %}">
+                            <p>프로필 생성하기</p>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="account_content fs-base fw-400">
+                        <p>닉네임 미설정 </p>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {% if target_user == user %}
+                <div class="account_content fs-base fw-400">
+                    <a href="{% url 'main:update' pk=user.pk %}">
+                        <p>개인정보 수정</p>
+                    </a>
+                </div>
+                <div class="account_content fs-base fw-400">
+                    <a href="{% url 'main:delete' pk=user.pk %}">
+                        <p>계정 삭제</p>
+                    </a>
+                </div>
+            {% endif %}
+            <div class="account_content fs-base fw-400">
+                <a href="{% url 'main:admin_secret_key' %}">admin으로 등록하기</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

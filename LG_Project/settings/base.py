@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 import os
 from pathlib import Path
+from . import database_config as DATABASE
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 from django.urls import reverse_lazy
@@ -33,16 +34,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "labelingapp",
-    "uploadapp",
-    "mainapp",
-    "outputapp",
+    "labeling",
+    "upload",
+    "main",
+    "output",
     "dashboard",
     "bootstrap4",
     "storages",
     "rest_framework",
     "django_apscheduler",
-    "django_pydenticon",
+    "django_pydenticon"
 ]
 
 MIDDLEWARE = [
@@ -68,7 +69,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "mainapp.context_processors.add_target_user",
+                "main.context_processors.add_target_user",
             ],
         },
     },
@@ -80,11 +81,15 @@ WSGI_APPLICATION = "LG_Project.wsgi.application"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': DATABASE.ENGINE,
+        'NAME': DATABASE.NAME,
+        'USER': DATABASE.USER,
+        'PASSWORD': DATABASE.PASSWORD,
+        'PORT': DATABASE.PORT,
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -133,8 +138,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # media가 저장되는 경로
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_REDIRECT_URL = reverse_lazy("mainapp:main")
-LOGOUT_REDIRECT_URL = reverse_lazy("mainapp:main")
+LOGIN_REDIRECT_URL = reverse_lazy("main:main")
+LOGOUT_REDIRECT_URL = reverse_lazy("main:main")
 
 # AWS
 AWS_ACCESS_KEY_ID = "AKIAV6TAQVC6X7WYHMG4"  # .csv 파일에 있는 내용을 입력 Access key ID
@@ -152,8 +157,15 @@ AWS_S3_OBJECT_PARAMETERS = {
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"  # Default
+# APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"  # Default
 SCHEDULER_DEFAULT = True
 
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 50000
+
+SCHEDULER_DEFAULT_ARGS = {
+    'apscheduler.job_defaults.coalesce': True,
+    'apscheduler.job_defaults.max_instances': 1,
+}
+
+APSCHEDULER_DATETIME_FORMAT = 'N j, Y, f:s a'

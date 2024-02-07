@@ -1,0 +1,793 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_filters %}
+{% block style %}
+    <link rel="stylesheet" href="{% static 'labeling/css/labeling_work.css' %}">
+{% endblock %}
+<style>
+    .drag {
+      cursor: move;
+    }
+    .bubble {
+      position: absolute;
+      background-color: #ffffff;
+      border: 1px solid #000000;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    #auto_labeling_output {
+        display: flex; 
+        flex-direction: column; 
+    }
+    .fw-400 {
+        line-height: 34px;
+    }
+</style>
+
+<!-- content title 부분 -->
+{% block content-title %}
+<div class="header-nav-wrap">
+    <h2 class="content-title fs-large fw-title gray-200">
+        Data Labeling
+    </h2>
+    {% if user.is_authenticated %}
+    <div class="fw-400 fs-medium">
+        <a href="{% url 'main:logout' %}" class="header-signup">Logout</a>
+    </div>
+    {% else %}    
+    <div class="fw-400 fs-medium">
+        <a
+            class="header-login"
+          href="{% url 'main:login' %}?next={{ request.path }}"
+          >로그인</a
+        >
+        <a
+            class="header-signup"
+          href="{% url 'main:signup' %}?next={{ request.path }}"
+          >회원가입</a
+        >
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<script>
+    window.localStorage.clear();
+    var product_names = {{ product_names | to_js_boolean | safe }};
+    var categoryList = {{ category_list |  safe }};
+    var emotion = {{ emotion |  safe }};
+    
+    localStorage.setItem('product_names', JSON.stringify(product_names));
+    localStorage.setItem('categoryList', JSON.stringify(categoryList));
+    localStorage.setItem('emotion', JSON.stringify(emotion));
+    
+    var categoryList = JSON.parse(localStorage.getItem('categoryList') || '[]');
+    var emotion = JSON.parse(localStorage.getItem('emotion') || '[]');
+
+    
+
+</script>
+<script>
+    var selectElement = document.getElementById('product_select');
+
+</script>
+<script>
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        var product_names = JSON.parse(localStorage.getItem('product_names') || '[]');
+        var selectElement = document.getElementById('product_select');
+        var review_info = {{review_info | safe}}
+        localStorage.setItem('review_info', JSON.stringify(review_info)); //리뷰 저장
+        
+        
+        // option값 변경할 때 마다 로컬스토리지 변경
+        selectElement.addEventListener('change', function() {
+            var categoryList = JSON.parse(localStorage.getItem('categoryList'))
+            var selectedProductNameLabeling = this.value;
+            localStorage.setItem('selectedProductNameLabeling',selectedProductNameLabeling);
+            localStorage.setItem('selectedCategory',JSON.stringify(categoryList[selectedProductNameLabeling]))
+        });
+
+        for (var i = 0; i < product_names.length; i++) {
+            var option = document.createElement('option');
+            option.value = product_names[i].product_name;
+            option.text = product_names[i].product_name;
+            option.setAttribute('data-is-assigned', product_names[i].is_assigned);
+            selectElement.appendChild(option);
+        }
+  
+        // 로컬 스토리지에서 'selectedProductNameLabeling' 값을 가져옵니다.
+        var selectedProductNameLabeling = localStorage.getItem('selectedProductNameLabeling');
+        
+        // 'selectedProductNameLabeling' 값이 null이 아니라면, 해당 값과 같은 value를 가진 옵션을 선택합니다.
+        if (selectedProductNameLabeling !== null) {
+            var options = selectElement.options;
+            for (var i = 0; i < options.length; i++) {
+                if (options[i].value === selectedProductNameLabeling) {
+                    options[i].selected = true;
+                    break;
+                }
+            }
+        }
+    });
+    
+    
+    function setIsAssigned(productName) { 
+        var selectElement = document.getElementById('product_select');
+        var selectedOption = selectElement.options[selectElement.selectedIndex];
+        var isAssigned = selectedOption.getAttribute('data-is-assigned') === 'true'; // 변환 부분
+        document.getElementById('is_assigned').value = isAssigned;
+    }
+</script>
+<script>
+    function submitForm() {
+        var productSelect = document.getElementById('product_select');
+        var selectedProduct = productSelect.options[productSelect.selectedIndex].value;
+
+        var productNames = JSON.parse(localStorage.getItem('product_names'));
+        var selectedProductName = productNames.find(function(product) {
+            return product.product_name === selectedProduct;
+        });
+
+        if (selectedProductName && selectedProductName.is_assigned) {
+            document.getElementById('count').value = 0;
+            document.getElementById('is_assigned').value = true;
+            document.getElementById('product-form').submit();
+        }
+    }
+</script>
+    <div class="mc">
+        <div class="tool_box">
+            <div class="top_box">
+                <form action="{% url 'labeling:work' %}" method="get" id="product-form" onsubmit="return checkCount()">
+                {% csrf_token %}
+                <div class="product">
+                    <div class="product_name">
+                        <p class="fw-400" style="margin-right:15px">제품명</p>
+                        <select id="product_select" name="product_name" onchange="submitForm()">
+                            <option value="" selected>제품명을 선택하세요</option>
+                        </select>
+                    </div>
+                    
+                    <div class="work_count">
+                        <p class="fw-400" style="margin-right : 15px">작업 개수</p>
+                        <input class="input" type="text" name="count" id="count"  placeholder="1 ~ 1000">
+                        <input type="hidden" id="is_assigned" name="is_assigned">
+                        <input class="asdf btn btn-outline-dark btn-sm fw-400" type="submit" value="확인" id="submit-btn">
+                    </div>
+                </div>
+                </form>
+
+                <script>
+                    function checkCount() {
+                        var productSelect = document.getElementById('product_select');
+                        var selectedProduct = productSelect.options[productSelect.selectedIndex].value;
+                
+                        var productNames = JSON.parse(localStorage.getItem('product_names'));
+                        var selectedProductName = productNames.find(function(product) {
+                            return product.product_name === selectedProduct;
+                        });
+                
+                        var countInput = document.getElementById('count');
+                        var count = parseInt(countInput.value, 10);
+                
+                        if (isNaN(count)) {
+                            alert('작업 개수를 입력하세요.');
+                            countInput.focus();
+                            return false;
+                        }
+                
+                        if (selectedProductName && selectedProductName.is_assigned && count + selectedProductName.assigned_num > 1000) {
+                            var total = count + selectedProductName.assigned_num;
+                            alert('라벨링 개수 1000개를 초과하였습니다. 현재 개수: ' + total);
+                            countInput.focus();
+                            return false;
+                        }
+                
+                        return true;
+                    }
+                </script>
+            </div>
+           
+            <div class = 'line'></div>
+            <div class="show-container">       
+                <style>
+                    .category_value {
+                        font-weight: 400;
+                    }
+                    .category_value1 {
+                        font-weight: 500;
+                        width: 100%; /* 너비를 충분히 크게 설정 */
+                        white-space: nowrap; /* 줄바꿈을 하지 않도록 설정 */
+                    }
+                    
+                </style>
+                
+                <div class="category">
+                    <div class="c_text fw-400">카테고리</div>
+                    <div class="c_content" id="category-content">
+                        <!-- 카테고리 데이터 -->
+                    </div>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // 로드 되면 category 가져오기
+                
+                        var selectedCategory = JSON.parse(localStorage.getItem('selectedCategory') || '[]');
+                        var categoryContentElement = document.getElementById('category-content');
+                        
+                        if (selectedCategory.length > 0) {
+                            for (var i = 0; i < selectedCategory.length; i++) {
+                                var div = document.createElement('div');
+                                div.className = 'category_value fw-400';
+                                div.style.backgroundColor = selectedCategory[i].color;
+                                var p = document.createElement('p');
+                                p.textContent = selectedCategory[i].category;
+                                div.appendChild(p);
+                                categoryContentElement.appendChild(div);
+                            }
+                        } else {
+                            var div = document.createElement('div');
+                            div.className = 'category_value1 fw-medium';
+                            div.style.backgroundColor = '#ffffff'; // 기본 배경색을 설정
+                            div.style.whiteSpace = 'nowrap'; // 줄바꿈을 하지 않도록 설정
+                            var p = document.createElement('p');
+                            p.textContent = '제품 데이터가 업로드 되지 않았습니다.';
+                            div.appendChild(p);
+                            categoryContentElement.appendChild(div);
+                        }
+
+                        var productForm = document.getElementById('product_form');
+                        var selectElement = document.getElementById('product_select');
+
+                        productForm.addEventListener('submit', function(event) {
+                            var selectedProductNameLabeling = selectElement.value;
+                            localStorage.setItem('selectedProductNameLabeling', selectedProductNameLabeling);
+                        });
+        
+                    });
+                </script>
+                
+                <div class = 'line'></div>
+                
+                <div class="feel">
+                    <p class="fw-400" style="border-radius: 5px; display: inline-block;  margin-top: 0.2rem; font-size: 1rem;  width : 100px ;margin-right:10px">
+                        감정
+                    </p>
+                    <div id="emotion_container">
+                        <div style="border-radius: 5px; display: inline-block; height: 34px; width: 105px; background-color: white; padding: 0.3rem; text-align: center; font-weight: 400; color: blue; border: 0.5px solid blue; margin-right: 15px;">긍정</div>
+                        <div style="border-radius: 5px; display: inline-block; height: 34px; width: 105px; background-color: white; padding: 0.3rem; text-align: center; font-weight: 400; color: red; border: 0.5px solid red; margin-left: 15px; margin-right: 15px;">부정</div>
+                        <div style="border-radius: 5px; display: inline-block; height: 34px; width: 105px; background-color: white; padding: 0.3rem; text-align: center; font-weight: 400; color: gray; border: 0.5px solid gray; margin-left: 15px;">중립</div>
+                    </div>
+                </div>
+                
+            </div>
+            
+                <div class="result-container">
+                    <div class="result_main">
+                        <script>
+                            window.addEventListener('DOMContentLoaded', function() {
+                                let selection = '';
+                                document.addEventListener('mouseup', function(event) {
+                                    if (event.target.classList.contains('dragg')) {
+                                        selection = window.getSelection().toString();
+                                        localStorage.setItem('selection', JSON.stringify(selection));
+                                        console.log('Selected text:', selection);
+                                        if (selection !== '') {
+                                            const x = event.clientX + window.scrollX;
+                                            const y = event.clientY + window.scrollY;
+                                            console.log('Mouse up at:', x, y);
+                                            console.log(selection);
+                                            const bubble = document.getElementById("bubble");
+                                            bubble.style.position = "absolute";
+                                            bubble.style.display = "flex";
+                                            bubble.style.flex_direction = "columnw";
+                                            bubble.style.align_items = "flex-start";
+                                            bubble.style.padding = "3px";
+                                            bubble.style.top = (y - 65) + 'px';
+                                            bubble.style.left = (x - 25) + 'px';
+                                            setTimeout(function() {
+                                                bubble.style.display = 'none';
+                                            }, 5000);
+                                            selection = '';
+                                        }
+                                    }
+                                });
+                            });
+                            
+                        </script>
+                        <div id="bubble">
+                            <div class="fw-400" id="target" style="border-right:1px solid rgba(102, 102, 102, 0.4)"
+                                onclick='target()'
+                            >
+                                대상
+                            </div>
+                            <div class="fw-400" id="phenomenon" onclick="phenomenon()">
+                                현상
+                            </div>
+                            <script>
+                                function phenomenon(){
+                                    const phenomenon = document.getElementById('phenomenon');
+                                    phenomenon.style.border = "1px solid #585757";
+                                    phenomenon.style.borderRadius = "10px";
+                                    phenomenon.style.background = "#FFFFFF";
+                                    const target = document.getElementById('target');
+                                    target.style.border = "none";
+                                    target.style.background = '#F2F2F2';
+                                    const in_phenomenon = document.getElementById('in_phenomenon');
+                                    in_phenomenon.value = localStorage.getItem('selection').replace(/"/g, "");;
+                                }
+                                
+                                function target(){
+                                    const target = document.getElementById('target');
+                                    target.style.border = "1px solid #585757";
+                                    target.style.borderRadius = "10px";
+                                    target.style.background = "#FFFFFF";
+                                    const phenomenon = document.getElementById('phenomenon');
+                                    phenomenon.style.border = "none";
+                                    phenomenon.style.background = '#F2F2F2';
+                                    const in_target = document.getElementById('in_target');
+                                    in_target.value = localStorage.getItem('selection').replace(/"/g, "");
+                                }
+                            </script>
+                        </div>
+                        <p fw-400>
+                        <!-- 하이라이트 부분, 클래스로 적용할 부분 지정, repalce함수를 통해 status_result로 받아온 글에 해당되는 부분 라벨링 -->
+                            <span class="fw-400" id="review_id">
+                                <!-- 자바스크립트로 id 값을 설정합니다 -->
+                            </span>
+                            <span>.</span>
+                            <span class="current_target dragg fw-400" id="review_content">
+                                <!-- 자바스크립트로 content 값을 설정합니다 -->
+                            </span>
+                            
+                            <!--오토라벨링-->
+                            <div class="work_result",id="work_result"> 
+                                    <div id="auto_labeling_output"></div>       
+                            </div>
+                        </p>
+                        <script>
+                            window.addEventListener('load', function() {
+                                // 로컬 스토리지에서 selectedCategory 값을 가져옵니다.
+                                var selectedCategory = JSON.parse(localStorage.getItem('selectedCategory'));
+                                var select = document.querySelector('.category_id');
+                            
+                                // 로컬스토리지에 labeling_data_list가 없다면 초기화합니다.
+                                if (!localStorage.getItem('labeling_data_list')) {
+                                    localStorage.setItem('labeling_data_list', JSON.stringify([]));
+                                }
+                            
+                                // selectedCategory의 각 항목에 대해 option 요소를 생성하고 select 요소에 추가합니다.
+                                for (var i = 0; i < selectedCategory.length; i++) {
+                                    var option = document.createElement('option');
+                                    option.value = selectedCategory[i].category;
+                                    option.text = selectedCategory[i].category;
+                                    select.appendChild(option);
+                                }
+                            
+                                // 로컬 스토리지에서 review_info 객체를 가져옵니다.
+                                var review_info_string = localStorage.getItem('review_info');
+                            
+                                // 로컬 스토리지에서 가져온 값이 undefined가 아닌 경우에만 JSON.parse() 호출합니다.
+                                var review_info = review_info_string ? JSON.parse(review_info_string) : {};
+                                var review_id = review_info.id;
+                                localStorage.setItem('review_id', JSON.stringify(review_id));
+                                printData(review_info.auto_labeling);
+
+                                //확인 버튼 누를 때
+                                document.querySelector('.select_box').addEventListener('submit', function(event) {
+                                    event.preventDefault();
+                            
+                                    var category = document.querySelector('.category_id').value;
+                                    var target = document.getElementById('in_target').value;
+                                    var phenomenon = document.getElementById('in_phenomenon').value;
+                                    var emotion = document.querySelector('.labeled_emotion').value;
+                                    var categoryColor = selectedCategory.find(function(categoryItem) {
+                                        return categoryItem.category === category;
+                                    }).color;
+                                
+                                    var newLabeling = {
+                                        category: category,
+                                        target: target,
+                                        phenomenon: phenomenon,
+                                        emotion: emotion
+                                    };
+                                    var newLabeling1 = {
+                                        category: category,
+                                        category_color: categoryColor,
+                                        target: target,
+                                        phenomenon: phenomenon,
+                                        emotion: emotion
+                                    };
+                                    // 로컬스토리지에서 labeling_data_list를 가져와서 추가합니다.
+                                    // review_info의 auto_labeling 배열에 newLabeling1을 추가합니다.
+                                    
+                                   
+
+                                    var labeling_data_list = JSON.parse(localStorage.getItem('labeling_data_list'));
+                                    labeling_data_list.push(newLabeling);
+                                    localStorage.setItem('labeling_data_list', JSON.stringify(labeling_data_list));
+
+                                    // review_info의 auto_labeling 배열에 newLabeling1을 추가합니다.
+                                    var review_info_string = localStorage.getItem('review_info');
+                                    var review_info = review_info_string ? JSON.parse(review_info_string) : {};
+
+                                    // auto_labeling 배열이 없거나 초기화되었다면, 새 배열을 생성합니다.
+                                    if (!review_info.auto_labeling) {
+                                        review_info.auto_labeling = [];
+                                    }
+
+                                    review_info.auto_labeling.push(newLabeling1);
+
+                                    // 변경된 review_info를 다시 로컬 스토리지에 저장합니다.
+                                    localStorage.setItem('review_info', JSON.stringify(review_info));
+                                    
+                                    // 데이터를 화면에 출력합니다.
+                                    printData(review_info, labeling_data_list);
+                                    
+                                    
+                                });
+                            
+                                // 페이지 로드 시에도 데이터를 화면에 출력합니다.
+                                var labeling_data_list = JSON.parse(localStorage.getItem('labeling_data_list'));
+                                printData(review_info);
+                               
+                                });
+                            
+                                function highlightText(item) {
+                                    
+                                    var reviewContent = document.getElementById('review_content');
+                                    var content = reviewContent.innerHTML;
+                                
+                                    var targetText = item.target;
+                                    var phenomenonText = item.phenomenon;
+                                
+                                    var targetExists = targetText && content.includes(targetText);
+                                    var phenomenonExists = phenomenonText && content.includes(phenomenonText);
+                                
+                                    
+                                
+                                    ['target', 'phenomenon'].forEach((type) => {
+                                        var text = item[type];
+                                        var textExists = text && content.includes(text);
+                                        if (!textExists) return;
+                                        var highlightedText = '<span style="background-color:' + item.category_color + '">' + text + '</span>';
+                                        var highlightedTextRegExp = new RegExp('<span style="background-color:' + item.category_color + '">' + text + '</span>', 'g');
+                                        if (highlightedTextRegExp.test(content)) {
+                                            content = content.replace(highlightedTextRegExp, text);
+                                            console.log("색깔 해제")
+                                        } else {
+                                            content = content.replace(text, highlightedText);
+                                            console.log("색 적용")
+                                        }
+                                    });
+                                    reviewContent.innerHTML = content;
+                                }
+                            function printData(review_info) {
+                                var review_info = JSON.parse(localStorage.getItem('review_info'));
+                                var selectedCategory = JSON.parse(localStorage.getItem('selectedCategory'));
+                                document.getElementById('review_id').textContent = review_info.id;
+                                document.getElementById('review_content').textContent = review_info.content;
+                                
+                                var output = '';
+                                for (var i = 0; i < review_info.auto_labeling.length; i++) {
+                                    var item = review_info.auto_labeling[i];
+                                    var categoryColor = selectedCategory.find(function(category) {
+                                        return category.category === item.category;
+                                    }).color;
+                                    var emotionClass;
+                                    if (item.emotion === 'neutral') {
+                                        emotionClass = 'neutral';
+                                    } else if (item.emotion === 'positive') {
+                                        emotionClass = 'positive';
+                                    } else if (item.emotion === 'negative') {
+                                        emotionClass = 'negative';
+                                    }
+                    
+                                    output += '<div id="' + item.target + item.phenomenon + '" class="view ' + emotionClass + '">' +
+                                        '<div class="cate fw-400" style="margin-right: 5px; background-color: ' + categoryColor + ';" id="colorDiv' + i + '">' + item.category + '</div>' +
+                                        ' - ' +
+                                        '<div class="fw-400" style="margin: 0 10px;">' + item.target + ' - </div>' +
+                                        '<div class="fw-400" style="margin-right: 10px;">' + item.phenomenon + '</div>' +
+                                        '<button class="x" onclick="delete_label(' + i + '); event.stopPropagation();">' +
+                                    
+                                        '<svg width="7" height="7" viewBox="0 0 7 7" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                                        '<path d="M6.71399 0.219121C6.52828 0.0334067 6.22828 0.0334067 6.04256 0.219121L3.71399 2.54293L1.38542 0.214359C1.19971 0.0286447 0.899707 0.0286447 0.713993 0.214359C0.528278 0.400073 0.528278 0.700073 0.713993 0.885788L3.04256 3.21436L0.713993 5.54293C0.528278 5.72864 0.528278 6.02864 0.713993 6.21436C0.899707 6.40007 1.19971 6.40007 1.38542 6.21436L3.71399 3.88579L6.04256 6.21436C6.22828 6.40007 6.52828 6.40007 6.71399 6.21436C6.89971 6.02864 6.89971 5.72864 6.71399 5.54293L4.38542 3.21436L6.71399 0.885788C6.89495 0.704835 6.89495 0.400073 6.71399 0.219121Z" fill="#969696"/>' +
+                                        '</svg>' +
+                                        '</button>' +
+                                        '</div>';
+                                }
+                                
+                    
+                                document.getElementById('auto_labeling_output').innerHTML = output;
+                                for (var item of review_info.auto_labeling) {
+                                    var div = document.getElementById(item.target + item.phenomenon);
+                                    div.addEventListener('click', (function(item) {
+                                        return function() {
+                                            highlightText(item);
+                                        };
+                                    })(item));
+                                }
+                                
+                        }
+                            
+                        function delete_label(index) {
+                            var review_info_string = localStorage.getItem('review_info');
+                            var review_info = review_info_string ? JSON.parse(review_info_string) : {};   
+                            var labeling_data_list_string = localStorage.getItem('labeling_data_list');
+                            var labeling_data_list = labeling_data_list_string ? JSON.parse(labeling_data_list_string) : {};
+                        
+                            // 삭제하려는 auto_labeling 항목을 가져옵니다.
+                            var item = review_info.auto_labeling[index];
+                        var reviewContent = document.getElementById('review_content');
+                        var content = reviewContent.innerHTML;
+                    
+                        var targetText = item.target;
+                        var phenomenonText = item.phenomenon;
+                    
+                        var targetExists = targetText && content.includes(targetText);
+                        var phenomenonExists = phenomenonText && content.includes(phenomenonText);
+                    
+                        if (targetExists && phenomenonExists) {
+                            console.log("대상, 현상 둘 다 있음");
+                        } else if (targetExists) {
+                            console.log("대상 있음: " + targetText);
+                        } else if (phenomenonExists) {
+                            console.log("현상 있음: " + phenomenonText);
+                        }
+                    
+                        ['target', 'phenomenon'].forEach((type) => {
+                            var text = item[type];
+                            var textExists = text && content.includes(text);
+                            if (!textExists) return;
+                            var highlightedText = '<span style="background-color:' + item.category_color + '">' + text + '</span>';
+                            if (content.includes(highlightedText)) {
+                                content = content.replace(highlightedText, text);
+                            }
+                        });
+                        reviewContent.innerHTML = content;
+                        
+                        
+                            // 이제 아이템을 삭제합니다.
+                            review_info.auto_labeling.splice(index, 1);
+                            labeling_data_list.splice(index, 1);
+                            localStorage.setItem('review_info', JSON.stringify(review_info));
+                            localStorage.setItem('labeling_data_list', JSON.stringify(labeling_data_list));
+                        
+                            // 화면을 갱신합니다.
+                            printData(review_info);
+                        }
+                            </script>
+                            
+                        <p>
+                            <form class="select_box" action="" method="post",id="review_form">
+                                {% csrf_token %}
+                                <div class="s_box"> 
+                                    <select class="category_id fw-400" name='category_id' style="display: inline-block; margin-left: 20px;">
+                                        <!-- 자바스크립트를 사용하여 option 태그를 동적으로 생성합니다. -->
+                                    </select>                    
+                                    
+                                    <input style="margin-left: 20px;" id="in_target" type="text" name="labeled_target" placeholder="키워드">
+                                    <input style="margin-left: 20px;" id="in_phenomenon" type="text" name="labeled_expression" placeholder="현상">
+                                    <select class="labeled_emotion fw-400" name="labeled_emotion" style="display: inline-block; margin-left: 20px;
+                                                      ">
+                                        <option value="positive">긍정</option>
+                                        <option value="negative">부정</option>
+                                        <option value="neutral">중립</option>
+                                    </select>
+                                    <input type="hidden" name="review_id" value="{{ review_info.id }}">
+                                    <input style="margin-left: 20px; color: white;" class="submit_btn" type="submit" value="확인"
+                                        >
+                                </div>
+                            </form>
+                        </p>
+                    </div>
+                </div>
+                <!-- delete 버튼 및 reset 버튼 및 next 버튼 -->
+                    <div class="bottom">
+                        <div class="bet" >
+                            <form action="{% url 'labeling:work' %}" method="post" id="dummy_form">
+                                {% csrf_token %}
+                                <input type="hidden" name="form-type" value="dummy_form">
+                                <input type="hidden" name="review_id" id="review_id_input" value="{{ review_info.id }}">
+                                <input type="hidden" name="product_name" id="product_name_input">
+                                <input type="hidden" name="category_product" value="{{ category_product }}">
+                                <input type="hidden" name="start" value="{{ start }}">
+                                <input type="hidden" name="end" value="{{ end }}">
+                                <button id="trash" class="btn btn-sm" type="submit">
+                                    <svg width="10" height="12" viewBox="0 0 10 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M7.66658 4V10.6667H2.33325V4H7.66658ZM6.66658 0H3.33325L2.66659 0.666667H0.333252V2H9.66658V0.666667H7.33325L6.66658 0ZM8.99992 2.66667H0.999919V10.6667C0.999919 11.4 1.59992 12 2.33325 12H7.66658C8.39992 12 8.99992 11.4 8.99992 10.6667V2.66667Z" fill="#A50034"/>
+                                    </svg>
+                                    <div class="fw-400">버리기</div>
+                                </button>
+                            </form>
+                            <script>
+                            window.addEventListener('load', function() {
+                                // 로컬 스토리지에서 product_name과 review_id 값을 가져옵니다.
+                                var product_name = localStorage.getItem('selectedProductNameLabeling');
+                                var review_id = localStorage.getItem('review_id');
+
+                                // product_name과 review_id를 설정합니다.
+                                document.getElementById('product_name_input').value = product_name;
+                                document.getElementById('review_id_input').value = review_id;
+                            });
+                        </script>
+                            <div >
+                                <button class="btn btn-sm fw-400" id="reset_btn"
+                                        style="background: #F2F2F2; color: #313238; font-size: 1rem; width:115px ; height:34px">
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M9.76672 2.23329C8.68005 1.14662 7.14005 0.519954 5.44672 0.693287C3.00005 0.939954 0.986722 2.92662 0.713388 5.37329C0.346722 8.60662 2.84672 11.3333 6.00005 11.3333C8.12672 11.3333 9.95339 10.0866 10.8067 8.29329C11.0201 7.84662 10.7001 7.33329 10.2067 7.33329C9.96005 7.33329 9.72672 7.46662 9.62005 7.68662C8.86672 9.30662 7.06005 10.3333 5.08672 9.89329C3.60672 9.56662 2.41339 8.35995 2.10005 6.87995C1.54005 4.29329 3.50672 1.99995 6.00005 1.99995C7.10672 1.99995 8.09339 2.45995 8.81339 3.18662L7.80672 4.19329C7.38672 4.61329 7.68005 5.33329 8.27339 5.33329H10.6667C11.0334 5.33329 11.3334 5.03329 11.3334 4.66662V2.27329C11.3334 1.67995 10.6134 1.37995 10.1934 1.79995L9.76672 2.23329Z" fill="#313238"/>
+                                        </svg>
+                                        초기화
+                                </button>
+                            </div>
+                        </div>
+                        <script>
+                            //초기화 버튼 눌렀을 때
+                            document.getElementById('reset_btn').addEventListener('click', function() {
+                                // 로컬 스토리지에서 review_info를 가져옵니다.
+                                var review_info_string = localStorage.getItem('review_info');
+                                var review_info = review_info_string ? JSON.parse(review_info_string) : {};
+                            
+                                // review_info의 auto_labeling 데이터를 비웁니다.
+                                review_info.auto_labeling = [];
+                            
+                                // 변경된 review_info를 다시 로컬 스토리지에 저장합니다.
+                                localStorage.setItem('review_info', JSON.stringify(review_info));
+                                localStorage.setItem('labeling_data_list', JSON.stringify([]));
+                                // 화면에 출력된 데이터를 비웁니다.
+                                var displayElement = document.getElementById('auto_labeling_output');
+                                displayElement.innerHTML = '';
+                            });
+                        </script>
+                        <script>
+                            window.onload = function() {
+                                var formElement = document.querySelector('#labeling_form');
+                            
+                                // 선택한 요소가 제대로 출력되는지 확인
+                                console.log(formElement);
+                            
+                                if (formElement) {
+                                    formElement.addEventListener('submit', function(event) {
+                                        // 로컬 스토리지에서 데이터 가져오기
+                                        var selectedProductNameLabeling = localStorage.getItem('selectedProductNameLabeling');
+                                        var review_id = localStorage.getItem('review_id');  // JSON 파싱 필요 없음
+                                        var labeling_data_list = localStorage.getItem('labeling_data_list');  // JSON 파싱 필요 없음
+                            
+                                        console.log(selectedProductNameLabeling);  // 값 출력
+                                        console.log(review_id);  // 값 출력
+                                        console.log(labeling_data_list);  // 값 출력
+                            
+                                        // review_info 객체 생성
+                                        var review_info = {
+                                            product_name: selectedProductNameLabeling,
+                                            review_id: review_id
+                                        };
+                            
+                                        // hidden input에 값 설정
+                                        document.querySelector('#review_info').value = JSON.stringify(review_info);
+                                        document.querySelector('#labeling_data_list').value = labeling_data_list;  // JSON 문자열화 필요 없음
+                                        
+                                        // 선택한 제품 이름을 화면에 표시
+                                        document.getElementById('selected_product_name').textContent = selectedProductNameLabeling;
+                                    });
+                                }
+                                var review_info_string = localStorage.getItem('review_info');
+                                var review_info = review_info_string ? JSON.parse(review_info_string) : {};
+
+                                var labeling_data_list = (review_info.auto_labeling || []).map(function(item) {
+                                    return {
+                                        category: item.category,
+                                        target: item.target,
+                                        phenomenon: item.phenomenon,
+                                        emotion: item.emotion
+                                    };
+                                });
+                            
+                                localStorage.setItem('labeling_data_list', JSON.stringify(labeling_data_list));
+                            }
+                            </script>
+                        
+                        <div class="bet">
+                            <div style="margin-left: 20px;">
+                                <form action="{% url 'labeling:work' %}" method="post" id="labeling_form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form-type" value="labeling_form">
+                                
+                                    <!-- hidden input 추가 -->
+                                    <input type="hidden" name="review_info" id="review_info">
+                                    <input type="hidden" name="labeling_data_list" id="labeling_data_list">
+                                
+                                    <button class="btn btn-sm fw-400" type="submit" value="다음"
+                                        style="background: #E8E8E8; color:#585757 ;  font-size: 1rem;width:115px; height:34px">
+                                        다음
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1.33327 6.66665H8.77993L5.5266 9.91998C5.2666 10.18 5.2666 10.6066 5.5266 10.8666C5.7866 11.1266 6.2066 11.1266 6.4666 10.8666L10.8599 6.47331C11.1199 6.21331 11.1199 5.79331 10.8599 5.53331L6.4666 1.13998C6.2066 0.879978 5.7866 0.879978 5.5266 1.13998C5.2666 1.39998 5.2666 1.81998 5.5266 2.07998L8.77993 5.33331H1.33327C0.966599 5.33331 0.666599 5.63331 0.666599 5.99998C0.666599 6.36665 0.966599 6.66665 1.33327 6.66665Z" fill="#585757"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+            
+            
+                    
+        </div>
+    </div>    
+    
+    <script>
+        function delete_label1(label_number) {
+            console.log(label_number)
+            $.ajax({
+                url: 'delete_label',
+                type: 'GET',
+                data: {
+                    'label_number': label_number,
+                },
+                dataType: 'json',
+                success: function (data) {
+                    console.log('삭제 완료')
+                    window.location.reload()
+                },
+                error: function (data) {
+                    console.log('에러 발생')
+                    window.location.reload()
+                }
+            })
+        }
+    
+        function reset(review_id) {
+            console.log('초기화를 시작해볼깡?')
+            $.ajax({
+                url: 'reset',
+                type: 'GET',
+                data: {
+                    'review_id': review_id,
+                },
+                dataType: 'json',
+                success: function (data) {
+                    console.log('초기화 완료')
+                    window.location.reload()
+                },
+                error: function (data) {
+                    console.log('에러 발생')
+                    window.location.reload()
+                }
+            })
+        }
+    </script>
+    <style>
+        .auto_labeling_output{
+            display: flex;
+            flex-direction: column;
+        }
+        .work_result > div > div {
+            display: flex;
+            flex-direction: row; /* 수정된 부분 */
+            justify-content: center;
+            align-items: center;
+            border: 0.5px solid;
+            border-radius: 30px;
+            padding: 15px;
+            margin-bottom: 15px;
+            height: 44px;
+            gap: 10;
+        }
+        
+        .work_result > div > div.neutral {
+            border-color : grey;
+            color: gray;
+        }
+        
+        .work_result > div > div.positive {
+            color: blue;
+            border-color : grey;
+        }
+        
+        .work_result > div > div.negative {
+            color: red;
+            border-color : grey;
+        }
+    </style>
+{% endblock %}

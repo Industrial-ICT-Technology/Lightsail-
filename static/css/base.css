@@ -4,7 +4,6 @@
   justify-content: right;
   flex-grow: 1;
   height: 60px;
-  
 }
 
 .header-title-name > a{
@@ -79,8 +78,8 @@ li>img{
   position:relative;
   padding: 10px 0 10px 61px;
   margin-top: 10px;
-
 }
+
 .menu-pd > a{
   color: #585757;
 }
@@ -98,18 +97,26 @@ li>img{
   left: 28px;
   top: 12px;
 }
-.menu-pd:hover {
-  border-right: 4px solid #A50034;
-  color: white;
+
+.dashContent {
+  background-color: white;
 }
-.menu-pd:hover, .logout-btn:hover {
+
+.dashContent a {
+  color : black
+}
+
+.menu-pd:hover, .logout-btn:hover, .dashContent:hover {
   background: #A50034;
   color : white;
 }
 .menu-link {
   width: 100%;
   height: 100%;
-  
+}
+
+.dropdownBtn:hover {
+  cursor: pointer;
 }
 
 .logout-btn {
@@ -153,7 +160,7 @@ li>img{
 
 .first-desc-wrap {
   width: 100%;
-  padding: 48px 45px 22px
+  padding: 48px 45px 22px;
 }
 
 .form-group {
@@ -209,7 +216,10 @@ li>img{
   color : #585757; /* 기본 색상 */
 }
 
-
+.dashContent{
+  display: flex;
+  flex-direction: column;
+}
 
 .menu-pd:hover .upload-img,
 .menu-pd:hover .labeling-img,

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+<!-- style -->
+{% block style %}
+<link rel="stylesheet" href="{% static 'output/css/output.css' %}">
+{% endblock %}
+
+<!-- content title 부분 -->
+{% block content-title %}
+<div class="header-nav-wrap">
+    <h2 class="content-title fs-large fw-title gray-200">
+        Data Export
+    </h2>
+    {% if user.is_authenticated %}
+    <div class="fw-400 fs-medium">
+        <a href="{% url 'main:logout' %}" class="header-signup">Logout</a>
+    </div>
+    {% else %}    
+    <div class="fw-400 fs-medium">
+        <a
+            class="header-login"
+          href="{% url 'main:login' %}?next={{ request.path }}"
+          >로그인</a
+        >
+        <a
+            class="header-signup"
+          href="{% url 'main:signup' %}?next={{ request.path }}"
+          >회원가입</a
+        >
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block content %}
+
+<!-- 사용 설명 기재 란(추후 수정 필요) -->
+<div class="first-desc primary-bg gray-100">
+  <div class="first-desc-wrap">
+    <!-- 제품군 선택-->
+    <form action="" method="get">
+      <div class="form-flex-wrap">
+        {% csrf_token%}
+        <h3 class="output-title fw-400 fs-base gray-100">제품 선택</h3>
+        <select name='product' onchange="this.form.submit()" class="category_product gray-100 primary-bg">
+          <option class="fs-medium" value="--제품을 선택하세요--">제품을 선택하세요</option>
+          {% for product in product_names %}
+          <option value='{{ product.name }}'>{{ product.name }}</option>
+          {{ product.name }}
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+    <span class="category_product_under"></span>
+    <div class="category_product-wrap">
+      <div>
+        {% if select_product %}
+        <h3 class="gray-100">
+          <strong class="fs-base category_product_tit fw-400">선택한 제품 :</strong> 
+          <span class="category_dropdown primary-bg fw-medium">
+            {{ select_product }}
+          </span>
+        </h3>
+        <p>
+          <div class="all_total_wrap fs-small fw-400">
+            <span class="all_total fs-small fw-400">
+              총 개수
+            </span> 
+            <span class="fw-medium">
+              {{ all_total }}
+            </span>
+          </div>
+          <div class="complate_wrap fs-small fw-regular">
+            <div class="first_num_wrap">
+              <span class="first_num">
+                작업완료
+              </span>
+              <span class="fw-medium">
+                {{ labeled_num }}
+              </span>
+            </div>
+            <!-- <div class="second_num_wrap">
+              <span class="second_num">
+                검수완료
+              </span>
+              <span class="fw-medium">
+                {{ second_num }}
+              </span>
+            </div> -->
+            <div class="dummy_num_wrap">
+              <span class="dummy_num">
+                삭제
+              </span>
+              <span class="fw-medium">
+                {{ trashed_num }}
+              </span>
+            </div>
+          </div>
+        </p>
+        {% else %}
+        선택한 제품 :
+        {% endif %}
+      </div>
+    </div>
+    <span class="category_product_under"></span>
+    <div class="subject_wrap gray-100">
+        <p class="subject fs-base fw-400">내보내기</p>
+          <span class="fs-small">* .xlsx 파일과 .csv 파일을 다운로드하는 데이터는 작업 완료된 데이터 입니다.</span>
+        <!-- 엑셀 파일 csv로 내보내기 => 엑셀 파일 필요시, 주피터로 중복 전처리 후, 엑셀로 뽑아내야함 -->
+        <div class="export_form_wrap">
+          <form action="{% url 'output:output' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if select_product %}
+              <input type="submit" name="export" value=".xlsx export" class="export fw-400">
+              <input type="submit" name="export" value=".csv export" class="analysis fw-400">
+            {% else %}
+              <input type="submit" name="export" value=".xlsx export" class="export fw-400" disabled>
+              <input type="submit" name="export" value=".csv export" class="analysis fw-400" disabled>
+            {% endif %}
+            <!-- <input type="submit" name="export" value=".csv export" class="analysis fw-400" disabled> -->
+            <input type="hidden" name="product" value="{{ select_product }}">
+          </form>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
