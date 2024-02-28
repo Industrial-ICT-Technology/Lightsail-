@@ -1,10 +1,11 @@
 #dashboard_date_main {
     width: calc(100% - 70px); 
     min-height: 730px;
-    padding: 34px 59px;
+    padding: 34px 45px;
     border-radius: 10px;
-    border: 1px;
+    border: 1px solid #D5D5D5;
     margin-left: 35px;
+    margin-right: 75px;
     background-color: #FFFFFF;
 }
 /* menu */
@@ -14,7 +15,6 @@
 .product_name {
     margin-right: 10px;
 }
-
 select {
     display: inline-block;
     height: 34px;
@@ -22,7 +22,6 @@ select {
     border-radius: 5px;
     border: 0.5px solid #D5D5D5;
 }
-
 .menu_date_wrap {
     display: flex;
     align-items: center;
@@ -31,7 +30,6 @@ select {
     margin-left: 24px;
     margin-right: 10px;
 }
-
 .date_selects {
     display: flex;
     justify-content: space-around;
@@ -58,12 +56,10 @@ select {
     color: #A50034;
     background-color: #FFFFFF;
 }
-
 .element-to-hide {
     position: absolute;
     left: -9999px;
-  }
-
+}
 .date_input {
     width: 144px;
     height: 34px;
@@ -72,19 +68,17 @@ select {
     border: 1px solid #E8E8E8;
     gap: 8px
 }
-
 .date_tilde {
     margin-left: 10px;
     margin-right: 10px;
 }
-.submit_btn {
+.s0ubmit_btn {
     height: 34px;
     margin-left: 5px;
     border-radius: 5px;
     color: #A50034;
     background: #FFF3F6;
 }
-
 /* 시각화 */
 #dashboard_date_visual {
     display: flex;

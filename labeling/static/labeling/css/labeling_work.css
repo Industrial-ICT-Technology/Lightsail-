@@ -1,7 +1,9 @@
 p{
     display: inline;
 }
-
+.labelingWrap{
+    background: #FFFFFF;
+}
 .mc{
     width: 1121px;
     border: 1px solid #D4D4D4;
@@ -38,22 +40,24 @@ div{
     width: 107px;
     height: 34px;
     margin-bottom: 2px;
-    margin-left: 310px;
+    margin-left: 35px;
     border-radius: 5px;
     border: 0.5px solid #D5D5D5;
     padding: 5px, 0px, 5px, 15px;
 }
-.line{
-    margin: auto;
-
-    margin-top: 30px;
-    width: 1031px;
+.line1{
+    margin: 30px 45px 0 45px;
+    border: 1px solid #D4D4D4;;
+}
+.line2{
+    margin: 0 45px 0 0px;
     border: 1px solid #D4D4D4;;
 }
 .tool_box{
     padding-top: 43px;  
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
 .top_box{
     margin-right: 45px;
@@ -64,12 +68,9 @@ div{
     display: flex;
     flex-direction: column;
     padding-top: 22px; /* 변경된 부분 */
-    margin-right: 45px;
     margin-top: 18px;
     margin-left: 45px;
     margin-bottom: 20px;
-    
-    
 }
 
 .category{
