@@ -12,6 +12,7 @@
 .productStatus{
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
 }
 .overallProgress{
     background-color: white;
@@ -30,15 +31,23 @@
     width: 366px;
     height: 69px;
 }
+
+.box {
+    display: flex;
+    align-items: center;
+}
+
 .status{
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
     padding : 22px 38px;
+    width : 33%;
 }
-.status > svg{
+.status  svg{
     margin-right: 16px;
 }
-.status > h3 {
+.status  h3 {
     margin-right: 10px;
     margin-top: 3px;
     color : #585757;
