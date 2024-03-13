@@ -221,6 +221,71 @@ def upload_main(request):
                         + f'?category_product={request.POST.get("category_product")}'
                     )
                     return HttpResponseRedirect(url)
+            elif request.POST.get("form-type") == 'formThree':
+                try:
+                    textarea_value = request.POST.get('textarea', None)
+                    if textarea_value is not None and textarea_value != "":
+                        # 데이터 전처리 및 정제 작업
+                        input_text = textarea_value
+                        dbframe = pd.read_csv(io.StringIO(input_text), sep='\t')
+                        dbframe = cleansing_data(dbframe, is_csv=False)
+
+                        # 중복제거하기
+                        product_instance = main_models.Product.objects.get(name=request.POST.get("category_product"))
+                        dbreviews = main_models.Review.objects.filter(
+                            product=product_instance
+                        ).values_list("content", flat=True)
+                        dbreviews = pd.DataFrame({"Original Comments": dbreviews})
+
+                        dbframe = (
+                            pd.merge(dbreviews, dbframe, how="outer", indicator=True)
+                            .query('_merge == "right_only"')
+                            .drop(columns=["_merge"])
+                        )
+
+                        # 현재 model의 product별로 최대값을 기준으로 number을 갱신하기 위한 변수 category_max_num
+                        category_max_num = (
+                            main_models.Review.objects.filter(
+                                product=product_instance
+                            )
+                            .aggregate(temp=Max("number"))
+                            .get("temp", None)
+                        )
+                        if category_max_num == None:
+                            category_max_num = 0
+                        dbframe.reset_index(inplace=True)
+                        dbframe["index"] = dbframe["index"] + int(category_max_num) + 1
+
+                        review_obj = [
+                            main_models.Review(
+                            product=product_instance,
+                            assigned_user=None,
+                            worked_user=None,
+                            number=row["index"],
+                            content=row["Original Comments"],
+                            is_labeled=False,
+                            is_trashed=False,
+                            model_name=row["Model Name"] if not pd.isna(row["Model Name"]) else "",
+                            model_code=row["Model Code"] if not pd.isna(row["Model Code"]) else "",
+                            date_writted=row["Date"],
+                        )
+                            for _, row in dbframe.iterrows()
+                        ]
+                        main_models.Review.objects.bulk_create(review_obj)
+                        request.session["message"] = "업로드가 완료되었습니다."
+                        request.session.set_expiry(3)
+                        url = (
+                            reverse("upload:upload")
+                            + f'?category_product={request.POST.get("category_product")}'
+                        )
+                        return HttpResponseRedirect(url)
+                    else:
+                        request.session['message'] = '<<Error>> 업로드 하려는 파일의 내용을 붙여넣은 후 업로드 해주세요.'
+                        request.session.set_expiry(3)
+                        return HttpResponseRedirect(reverse('uploadapp:upload'))
+                except Exception as e:
+                    print(f"Error at line {sys.exc_info()[-1].tb_lineno}: {e}")  # 추가한 라인; 발생하는 오류와 몇 번째 줄에서 발생하는지 출력합니다.
+                    raise e
 
         return render(request, "upload/upload_main.html", {})
 
