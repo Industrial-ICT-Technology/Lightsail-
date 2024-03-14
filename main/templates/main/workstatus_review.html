@@ -36,6 +36,10 @@
 <script type="text/javascript">
   document.addEventListener('DOMContentLoaded', function() {
     if (!localStorage.getItem('productDataInitialized')) {
+<<<<<<< HEAD
+=======
+      localStorage.clear();
+>>>>>>> 838073b25bf5bb942b5edb873e8d12946fae03d4
       let productData = JSON.parse(document.getElementById('productData').textContent);
       localStorage.setItem('productData', JSON.stringify(productData));
       localStorage.setItem('productDataInitialized', 'true');
@@ -142,6 +146,10 @@
           modelCodeInput.value = this.value;
 
           // localStorage.removeItem('categoryOrder'); 모델 코드 form 선택 시 정렬 상태 초기화
+<<<<<<< HEAD
+=======
+          //..
+>>>>>>> 838073b25bf5bb942b5edb873e8d12946fae03d4
         
           document.forms['category_model_code'].appendChild(productInput);
           document.forms['category_model_code'].appendChild(modelNameInput);

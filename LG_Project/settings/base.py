@@ -124,7 +124,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = "/static/"  # static파일에 직접 접근하기 위한 경로
+<<<<<<< HEAD
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # 파일 저장 경로
+=======
+>>>>>>> 838073b25bf5bb942b5edb873e8d12946fae03d4
 
 # STATICFILES_DIRS = [
 #     os.path.join(BASE_DIR, 'static'),
