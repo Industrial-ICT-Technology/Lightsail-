@@ -38,16 +38,15 @@ div{
     width: 107px;
     height: 34px;
     margin-bottom: 2px;
-    margin-left: 310px;
+    margin-left: 880px;
     border-radius: 5px;
     border: 0.5px solid #D5D5D5;
     padding: 5px, 0px, 5px, 15px;
 }
 .line{
-    margin: auto;
 
     margin-top: 30px;
-    width: 1031px;
+    width: 97%;
     border: 1px solid #D4D4D4;;
 }
 .tool_box{
@@ -74,6 +73,7 @@ div{
 
 .category{
     display: flex;
+    margin-top: 30px;
 }
 
 .category_value{
