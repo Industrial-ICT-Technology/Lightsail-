@@ -236,3 +236,16 @@ p {
     position: absolute;
     top: 29px;
   }
+
+  .text-input-wrap{
+    display: flex;
+  }
+  .text-data-input {
+    margin-top: 10px;
+  }
+  .text-input-warning{
+    display: flex;
+    align-items: flex-end;
+    text-align: center;
+    margin-left: 10px;
+  }

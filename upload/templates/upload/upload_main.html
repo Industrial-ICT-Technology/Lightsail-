@@ -367,7 +367,10 @@
                 {% csrf_token %}
                 <input type="hidden" name="form-type" value="formThree">
                 <input type="hidden" value="{{ request.session.category_product }}" name="category_product">
-                <label for="raw_data">데이터를 여기에 입력해 주세요:</label><br>
+                <div class="text-input-wrap">
+                    <label for="raw_data" class="text-data-input fs-base fw-400">텍스트 업로드</label><br>
+                    <p class="text-input-warning fs-tiny">* Column명을 기입하셔야합니다.</p>
+                </div>
                 <textarea name="textarea" id="textarea" rows="10" cols="100"></textarea><br>
                 {% if request.session.category_product is not None %}
                     <button class="send_btn fs-small fw-400" type="submit" style="color:white;"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
