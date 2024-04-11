@@ -586,8 +586,10 @@ src="https://www.gstatic.com/charts/loader.js"
     }
     // 트리맵 생성
     function prepareData(values) {
+      const sortedEntries = Object.entries(values).sort((a, b) => b[1] - a[1]);
+      const topEntries = sortedEntries.slice(0, 7);
       return {
-        children: Object.entries(values).map(([key, value]) => ({ name: key, value }))
+        children: topEntries.map(([key, value]) => ({ name: key, value }))
       };
     }
     
