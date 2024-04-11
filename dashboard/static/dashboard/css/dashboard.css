@@ -29,7 +29,6 @@ select {
   width: 25%;
   height: 392px;
   padding: 10px;
-  overflow: auto;
   margin-right: 10px;
 }
 .isNagative{
@@ -85,6 +84,8 @@ select {
 .apply_box{
   display: flex;
   flex-direction: column;
+  height: 300px;
+  overflow: auto;
 }
 .apply_text{
   margin-bottom: 10px;
