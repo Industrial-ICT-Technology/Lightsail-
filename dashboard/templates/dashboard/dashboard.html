@@ -591,14 +591,15 @@ src="https://www.gstatic.com/charts/loader.js"
       };
     }
     
-    
+    const containerWidth = document.querySelector("#treemapPositive").getBoundingClientRect().width;
+
     const dataPos = prepareData(positiveValues);
     const dataNeg = prepareData(negativeValues);
     const dataNeu = prepareData(neutralValues);
 
-    const width = 300;
+    const width = containerWidth;
     const height = 210;
-    
+
     const createTreemap = (svg, data, color) => {
       if (data.children.some(child => child.value !== 0)) {
         const treemap = d3.treemap()
